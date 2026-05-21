@@ -791,3 +791,345 @@ body::before {
 /* Leaflet dark overrides */
 .leaflet-tile { filter:brightness(.85) saturate(.5) hue-rotate(180deg); }
 .leaflet-container { background:#020c18; }
+
+/* ── 13. FLOATING VOICE BUTTON ── */
+.fvb {
+  position:fixed; bottom:32px; right:32px;
+  width:64px; height:64px; border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  box-shadow:0 4px 24px rgba(0,200,255,0.4);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.6rem; z-index:900;
+  transition:.25s;
+}
+.fvb:hover { transform:scale(1.1); box-shadow:0 8px 32px rgba(0,200,255,0.55); }
+
+.fvb-ring {
+  position:absolute; border-radius:50%;
+  border:1.5px solid rgba(0,200,255,0.5);
+  animation:fvbRing 2s ease-out infinite;
+}
+.fvb-ring1 { width:80px; height:80px; animation-delay:0s; }
+.fvb-ring2 { width:80px; height:80px; animation-delay:1s; }
+.fvb-core { position:relative; z-index:1; }
+
+/* ── 14. MODAL ── */
+.modal-bg {
+  position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,0.65); backdrop-filter:blur(8px);
+  display:flex; align-items:flex-end; justify-content:flex-end;
+  padding:24px 32px;
+  opacity:0; visibility:hidden; transition:.3s;
+}
+.modal-bg.open { opacity:1; visibility:visible; }
+
+.modal-box {
+  width:420px; max-height:620px;
+  background:rgba(4,21,38,0.95);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(0,200,255,0.2);
+  border-radius:20px;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,0.6), 0 0 80px rgba(0,200,255,0.1);
+  transform:translateY(20px) scale(.97); transition:.3s;
+}
+.modal-bg.open .modal-box { transform:none; }
+
+.modal-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 20px;
+  border-bottom:1px solid rgba(0,200,255,0.1);
+}
+.mh-brand { display:flex; align-items:center; gap:12px; }
+.mh-avatar {
+  width:42px; height:42px; border-radius:50%;
+  background:linear-gradient(135deg,rgba(0,200,255,0.2),rgba(41,121,255,0.2));
+  border:1px solid rgba(0,200,255,0.3);
+  display:flex; align-items:center; justify-content:center; font-size:1.2rem;
+}
+.mh-info h3 { font-family:var(--f-head); font-size:.95rem; font-weight:700; letter-spacing:.06em; }
+.mh-status { display:flex; align-items:center; gap:6px; margin-top:3px; }
+.mh-status-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--safe); box-shadow:0 0 6px var(--safe);
+  animation:dotPulse 1.5s ease-in-out infinite;
+}
+.mh-status span { font-size:.72rem; color:var(--txt3); }
+.modal-x {
+  width:28px; height:28px; border-radius:50%;
+  background:rgba(255,255,255,0.07);
+  color:var(--txt2); font-size:.9rem; transition:.2s;
+}
+.modal-x:hover { background:rgba(255,61,90,0.15); color:var(--danger); }
+
+/* ── 15. CHAT ── */
+.chat-window {
+  flex:1; overflow-y:auto; padding:16px;
+  display:flex; flex-direction:column; gap:14px;
+  scrollbar-width:thin; scrollbar-color:rgba(0,200,255,0.15) transparent;
+}
+.chat-window::-webkit-scrollbar { width:4px; }
+.chat-window::-webkit-scrollbar-thumb { background:rgba(0,200,255,0.15); border-radius:4px; }
+
+.chat-msg { display:flex; gap:10px; }
+.ai-msg   { justify-content:flex-start; }
+.user-msg { flex-direction:row-reverse; }
+
+.cm-av {
+  width:32px; height:32px; border-radius:50%; flex-shrink:0;
+  background:rgba(0,200,255,0.1); border:1px solid rgba(0,200,255,0.2);
+  display:flex; align-items:center; justify-content:center; font-size:.95rem;
+}
+.cm-bubble {
+  max-width:78%; padding:10px 14px;
+  border-radius:14px;
+  font-size:.84rem; line-height:1.6;
+  position:relative;
+  animation:bubbleIn .3s ease forwards;
+}
+.ai-msg .cm-bubble {
+  background:rgba(0,200,255,0.07);
+  border:1px solid rgba(0,200,255,0.12);
+  border-bottom-left-radius:4px;
+  color:var(--txt1);
+}
+.user-msg .cm-bubble {
+  background:linear-gradient(135deg,rgba(41,121,255,0.2),rgba(0,200,255,0.15));
+  border:1px solid rgba(41,121,255,0.25);
+  border-bottom-right-radius:4px;
+  color:var(--txt1);
+}
+.bubble-speak {
+  display:inline-flex; margin-top:6px; padding:3px 8px;
+  border-radius:var(--r-full);
+  background:rgba(0,200,255,0.07); border:1px solid rgba(0,200,255,0.12);
+  font-size:.7rem; color:var(--cyan); transition:.2s;
+}
+.bubble-speak:hover { background:rgba(0,200,255,0.15); }
+
+.typing-bubble .cm-bubble::after {
+  content:'● ● ●';
+  font-size:.5rem; letter-spacing:4px;
+  color:var(--cyan); opacity:.7;
+  animation:typingDots 1.2s ease-in-out infinite;
+}
+
+.voice-listening-bar {
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  padding:10px 16px;
+  background:rgba(0,200,255,0.05);
+  border-top:1px solid rgba(0,200,255,0.1);
+  font-size:.78rem; color:var(--cyan);
+}
+.vlb-waves { display:flex; gap:3px; align-items:center; }
+.vlb-waves span {
+  width:3px; border-radius:3px;
+  background:var(--cyan);
+  animation:waveAnim .8s ease-in-out infinite;
+}
+.vlb-waves span:nth-child(1){height:8px;  animation-delay:.0s}
+.vlb-waves span:nth-child(2){height:16px; animation-delay:.1s}
+.vlb-waves span:nth-child(3){height:12px; animation-delay:.2s}
+.vlb-waves span:nth-child(4){height:20px; animation-delay:.3s}
+.vlb-waves span:nth-child(5){height:8px;  animation-delay:.4s}
+
+.chat-input-row {
+  display:flex; align-items:center; gap:10px;
+  padding:14px 16px;
+  border-top:1px solid rgba(0,200,255,0.1);
+}
+.mic-btn {
+  width:36px; height:36px; border-radius:50%; flex-shrink:0;
+  background:var(--glass-bg); border:1px solid var(--glass-bd);
+  font-size:1rem; transition:.25s;
+}
+.mic-btn:hover { border-color:var(--cyan-dim); background:rgba(0,200,255,0.1); }
+.mic-btn.active { background:rgba(0,200,255,0.2); border-color:var(--cyan); animation:micGlow 1s ease-in-out infinite; }
+
+.chat-input-field {
+  flex:1; background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:var(--r-full);
+  color:var(--txt1); font-size:.85rem;
+  padding:9px 16px; transition:.25s;
+}
+.chat-input-field::placeholder { color:var(--txt3); }
+.chat-input-field:focus { border-color:rgba(0,200,255,0.3); background:rgba(0,200,255,0.04); }
+
+.chat-send-btn {
+  width:36px; height:36px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  color:#fff; display:flex; align-items:center; justify-content:center;
+  transition:.25s;
+}
+.chat-send-btn:hover { transform:scale(1.1); box-shadow:0 4px 14px rgba(0,200,255,0.35); }
+
+/* ── 16. TOAST ── */
+.toast-wrap {
+  position:fixed; bottom:32px; left:32px;
+  display:flex; flex-direction:column-reverse; gap:10px; z-index:2000;
+}
+.toast {
+  padding:12px 20px; border-radius:var(--r-md);
+  background:rgba(4,21,38,0.95); backdrop-filter:blur(16px);
+  border:1px solid var(--glass-bd);
+  font-size:.82rem; color:var(--txt1);
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  animation:toastIn .3s ease forwards;
+  max-width:300px;
+}
+.toast.out { animation:toastOut .3s ease forwards; }
+.toast.success { border-color:rgba(0,230,118,.3); }
+.toast.error   { border-color:rgba(255,61,90,.3); }
+.toast.info    { border-color:rgba(0,200,255,.25); }
+
+/* ── 17. KEYFRAME ANIMATIONS ── */
+@keyframes fadeSlideUp     { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+@keyframes radarSweep      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes ringBreath      { 0%,100%{opacity:.15;transform:translate(-50%,-50%) scale(1)} 50%{opacity:.4;transform:translate(-50%,-50%) scale(1.015)} }
+@keyframes dpOrbit         { 0%,100%{transform:rotate(0deg) translate(130px) rotate(0deg)} 100%{transform:rotate(360deg) translate(130px) rotate(-360deg)} }
+@keyframes floatPrt        { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes blipFade        { 0%{opacity:0;transform:scale(0)} 20%{opacity:1;transform:scale(1)} 80%{opacity:1} 100%{opacity:0;transform:scale(1.8)} }
+@keyframes coreGlow        { 0%,100%{opacity:.5} 50%{opacity:1} }
+@keyframes dotPulse        { 0%,100%{opacity:.5} 50%{opacity:1} }
+@keyframes pulsExpand      { 0%{opacity:.6;transform:translate(-50%,-50%) scale(.6)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)} }
+@keyframes spinIcon        { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+@keyframes cardReveal      { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+@keyframes listItemIn      { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+@keyframes btnShine        { 0%{transform:translateX(-150%)} 60%,100%{transform:translateX(150%)} }
+@keyframes fvbRing         { 0%{opacity:.6;transform:scale(.8)} 100%{opacity:0;transform:scale(1.6)} }
+@keyframes bubbleIn        { from{opacity:0;transform:translateY(6px) scale(.97)} to{opacity:1;transform:none} }
+@keyframes typingDots      { 0%,100%{opacity:.3} 50%{opacity:1} }
+@keyframes waveAnim        { 0%,100%{transform:scaleY(.5)} 50%{transform:scaleY(1)} }
+@keyframes micGlow         { 0%,100%{box-shadow:0 0 0 0 rgba(0,200,255,0.4)} 50%{box-shadow:0 0 0 8px rgba(0,200,255,0)} }
+@keyframes toastIn         { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:none} }
+@keyframes toastOut        { to{opacity:0;transform:translateX(-20px)} }
+@keyframes simActiveGlow   { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 24px rgba(255,255,255,0.1)} }
+
+/* ── 18. RESPONSIVE ── */
+@media (max-width:1100px) {
+  .weather-grid { grid-template-columns:repeat(3,1fr); }
+  .mit-grid { grid-template-columns:1fr 1fr; }
+  .hero-inner { gap:40px; }
+  .radar-container { width:320px; height:320px; }
+}
+
+@media (max-width:900px) {
+  .hero-inner { grid-template-columns:1fr; }
+  .hero-right { order:-1; }
+  .radar-container { width:280px; height:280px; }
+  .rad-ring-1 { width:100%; height:100%; }
+  .dsb-btn-grid { grid-template-columns:repeat(2,1fr); }
+  .desktop-nav { display:none; }
+  .hamburger { display:flex; }
+  .selectors-row { display:none; }
+}
+
+@media (max-width:650px) {
+  .weather-grid { grid-template-columns:1fr 1fr; }
+  .mit-grid { grid-template-columns:1fr; }
+  .hero-stats-row { gap:14px; }
+  .hs-num { font-size:1.2rem; }
+  .hero-headline { font-size:2rem; }
+  .dsb-btn-grid { grid-template-columns:1fr 1fr; gap:10px; }
+  .dsb-btn { padding:14px 8px; }
+  .modal-bg { padding:0; align-items:flex-end; }
+  .modal-box { width:100%; border-radius:20px 20px 0 0; max-height:80vh; }
+  .sc-layout { flex-direction:column; text-align:center; }
+  .sc-footer { flex-direction:column; gap:14px; }
+}
+
+@media (max-width:420px) {
+  .weather-grid { grid-template-columns:1fr; }
+  .hero-ctas { flex-direction:column; }
+  .logo-tagline { display:none; }
+}
+
+/* ══════════════════════════════════════════════
+   19. SECTION BACKGROUNDS (visual separation)
+   ══════════════════════════════════════════════ */
+#weatherSection   { background: linear-gradient(180deg,transparent,rgba(0,200,255,0.015),transparent); }
+#predictionSection{ background: linear-gradient(180deg,transparent,rgba(41,121,255,0.015),transparent); }
+#mitigationSection{ background: linear-gradient(180deg,transparent,rgba(139,92,246,0.015),transparent); }
+#mapSection       { background: linear-gradient(180deg,transparent,rgba(0,200,255,0.015),transparent); }
+
+/* ── 20. ENHANCED DISASTER SIM CARD EFFECTS ── */
+@keyframes rainPulse    { 0%,100%{border-color:rgba(41,121,255,.35);box-shadow:0 4px 20px rgba(41,121,255,.1)} 50%{border-color:rgba(41,121,255,.6);box-shadow:0 4px 30px rgba(41,121,255,.25)} }
+@keyframes windSway     { 0%,100%{transform:translateY(-4px) translateX(0)} 50%{transform:translateY(-4px) translateX(3px)} }
+@keyframes heatShimmer  { 0%,100%{border-color:rgba(255,87,34,.35);box-shadow:0 4px 20px rgba(255,87,34,.1)} 50%{border-color:rgba(255,87,34,.65);box-shadow:0 4px 30px rgba(255,87,34,.3),inset 0 0 20px rgba(255,87,34,.04)} }
+
+.w-card.rain-effect { animation: rainPulse 2s ease-in-out infinite !important; }
+.w-card.wind-effect { animation: windSway 1.8s ease-in-out infinite !important; border-color:rgba(139,92,246,.45) !important; box-shadow:0 4px 24px rgba(139,92,246,.18) !important; }
+.w-card.heat-effect { animation: heatShimmer 2.2s ease-in-out infinite !important; }
+
+/* ── 21. STATUS CARD TITLE COLORS IN DISASTER MODE ── */
+.danger-mode .sc-title { color: var(--danger); }
+.warn-mode   .sc-title { color: var(--warn); }
+.danger-mode .live-pulse { background:var(--danger); box-shadow:0 0 6px var(--danger); }
+.warn-mode   .live-pulse { background:var(--warn);   box-shadow:0 0 6px var(--warn); }
+
+/* Pulsing glow for alert status cards */
+@keyframes dangerPulse { 0%,100%{box-shadow:0 0 60px rgba(255,61,90,.08)} 50%{box-shadow:0 0 90px rgba(255,61,90,.22),0 0 160px rgba(255,61,90,.06)} }
+@keyframes warnPulse   { 0%,100%{box-shadow:0 0 60px rgba(255,167,38,.08)} 50%{box-shadow:0 0 90px rgba(255,167,38,.22),0 0 160px rgba(255,167,38,.06)} }
+.status-card.danger-mode { animation: dangerPulse 3s ease-in-out infinite; }
+.status-card.warn-mode   { animation: warnPulse 3s ease-in-out infinite; }
+
+/* ── 22. MAP STATUS MESSAGE STATES ── */
+#mapStatusMsg        { transition: color .4s; }
+#mapStatusMsg.danger { color: var(--danger); }
+#mapStatusMsg.warn   { color: var(--warn); }
+
+/* ── 23. SCROLL REVEAL ── */
+.reveal { opacity:0; transform:translateY(22px); transition:opacity .55s ease, transform .55s ease; }
+.reveal.visible { opacity:1; transform:none; }
+
+/* ── 24. TYPING INDICATOR ── */
+.typing-bubble .cm-bubble p { display:none; }
+.typing-bubble .cm-bubble { min-width:58px; }
+.typing-bubble .cm-bubble::after {
+  content:'● ● ●';
+  font-size:.5rem; letter-spacing:4px;
+  color:var(--cyan); opacity:.7;
+  animation:typingDots 1.2s ease-in-out infinite;
+}
+
+/* ── 25. ACCESSIBILITY ── */
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline:2px solid var(--cyan); outline-offset:2px;
+}
+
+/* ── 26. SECTION DIVIDER LINES ── */
+.page-section { position:relative; }
+.page-section::before {
+  content:''; display:block;
+  position:absolute; top:0; left:24px; right:24px; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,200,255,0.06),transparent);
+}
+
+/* ── 27. SIM BUTTON ACTIVE STATE BRIGHTNESS ── */
+.dsb-btn.active-sim { filter:brightness(1.15); }
+.flood-dsb.active-sim   { background:rgba(21,101,192,.15); border-color:rgba(21,101,192,.6); }
+.cyclone-dsb.active-sim { background:rgba(123,31,162,.15); border-color:rgba(123,31,162,.6); }
+.heat-dsb.active-sim    { background:rgba(230,74,25,.15);  border-color:rgba(230,74,25,.6); }
+
+/* ── 28. SEVERITY CHIP DEFAULT ── */
+.sev-chip { background:rgba(255,255,255,.07); color:var(--txt2); border:1px solid rgba(255,255,255,.1); }
+
+/* ── 29. MITIGATION GRID REVEAL ── */
+.mit-card { opacity:0; animation:cardReveal .5s ease forwards; }
+.mit-card:nth-child(1) { animation-delay:.05s; }
+.mit-card:nth-child(2) { animation-delay:.15s; }
+.mit-card:nth-child(3) { animation-delay:.25s; }
+
+/* ── 30. EXTRA RESPONSIVE ── */
+@media (max-width:900px) {
+  .dsb-btn-grid { grid-template-columns:repeat(2,1fr); }
+  .prob-grid { padding:0 8px; }
+  .sc-meta { font-size:.7rem; }
+}
+@media (max-width:520px) {
+  .mit-severity-bar { font-size:.78rem; }
+  .modal-box { max-height:85vh; }
+  .chat-window { max-height:340px; }
+}
