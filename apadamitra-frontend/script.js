@@ -1,4 +1,4 @@
- /* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
    APADAMITRA — script.js
    AI Disaster Prediction & Mitigation System
    Compatible with index.html + style.css
@@ -12,15 +12,11 @@ const WEATHER_API = 'https://api.openweathermap.org/data/2.5/weather';
 
 // ─── STATE ───────────────────────────────────────────────────────
 let currentLang = 'en';
-const langMap = {
-  en: "en",
-  hi: "hi",
-  bn: "bn"
-};
+const langMap = { en: "en", hi: "hi", bn: "bn" };
 let currentUserType = 'farmer';
 let currentLat = null;
 let currentLon = null;
-let currentDisaster = null;   // null = clear | 'flood' | 'cyclone' | 'heatwave'
+let currentDisaster = null;
 let isSimulating = false;
 let map = null;
 let mapLayers = { safe: [], warn: [], danger: [] };
@@ -28,6 +24,57 @@ let userMarker = null;
 let recognition = null;
 let isListening = false;
 let speechSynth = window.speechSynthesis;
+
+// ─── REAL-TIME VOICE STATE ────────────────────────────────────────
+let voiceWs = null;
+let wsReconnectTimer = null;
+let currentTypingId = null;
+let ttsBuffer = '';
+let autoSpeakEnabled = true;
+
+// ─── TTS QUEUE ────────────────────────────────────────────────────
+// FIX: replaces the old speakText-calls-cancel pattern that caused
+// only the last sentence to be spoken. Sentences are now queued and
+// played sequentially; each starts only after the previous ends.
+let _ttsQueue = [];
+let _ttsPlaying = false;
+
+function _drainTtsQueue() {
+  if (!_ttsQueue.length) { _ttsPlaying = false; return; }
+  _ttsPlaying = true;
+  const text = _ttsQueue.shift();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = speechLangCodes[currentLang] || 'en-IN';
+  utt.rate = 1.0;
+  utt.pitch = 1;
+  utt.onend   = _drainTtsQueue;
+  utt.onerror = _drainTtsQueue;
+  speechSynth.speak(utt);
+}
+
+/**
+ * speakText — cancels anything currently playing and speaks `text` fresh.
+ * Use this for manual/button-triggered speech (speak bubble, speak list).
+ */
+function speakText(text) {
+  if (!speechSynth || !autoSpeakEnabled) return;
+  _ttsQueue = [];
+  _ttsPlaying = false;
+  speechSynth.cancel();
+  _ttsQueue.push(text);
+  _drainTtsQueue();
+}
+
+/**
+ * enqueueSpeech — adds `text` to the queue without cancelling.
+ * Use this when speaking multiple sentences from the same response
+ * so they play in order without cutting each other off.
+ */
+function enqueueSpeech(text) {
+  if (!speechSynth || !autoSpeakEnabled || !text.trim()) return;
+  _ttsQueue.push(text);
+  if (!_ttsPlaying) _drainTtsQueue();
+}
 
 // ─── I18N STRINGS ────────────────────────────────────────────────
 const i18n = {
@@ -175,7 +222,6 @@ function applyI18n() {
     const val = t(key);
     if (val) el.textContent = val;
   });
-  // Placeholder for chat input
   const ci = document.getElementById('chatInput');
   if (ci) ci.placeholder = currentLang === 'hi' ? 'अपना प्रश्न टाइप या बोलें...' : currentLang === 'bn' ? 'প্রশ্ন টাইপ বা বলুন...' : 'Type or speak your question...';
 }
@@ -200,10 +246,8 @@ function setLanguage(lang) {
   currentLang = lang;
   document.documentElement.lang = lang;
   applyI18n();
-  // If mitigation is visible, re-speak greeting update
   const greet = document.getElementById('greetingText');
   if (greet) greet.textContent = t('ai_greeting');
-  // Reapply map status
   const mapMsg = document.getElementById('mapStatusMsg');
   if (mapMsg) mapMsg.textContent = (currentDisaster && isSimulating) ? t('map_danger') : t('map_safe');
   showToast(lang === 'hi' ? 'भाषा बदली गई' : lang === 'bn' ? 'ভাষা পরিবর্তিত হয়েছে' : 'Language updated', 'info');
@@ -211,10 +255,7 @@ function setLanguage(lang) {
 
 function setUserType(type) {
   currentUserType = type;
-  // If there's an active disaster, refresh mitigation
-  if (currentDisaster) {
-    fetchMitigation(currentDisaster, 75);
-  }
+  if (currentDisaster) { fetchMitigation(currentDisaster, 75); }
 }
 
 // ─── LOADING SCREEN ──────────────────────────────────────────────
@@ -229,7 +270,6 @@ function hideLoadingScreen() {
 // ─── GEOLOCATION ─────────────────────────────────────────────────
 function initGeolocation() {
   if (!navigator.geolocation) {
-    // Default to Bardhaman, West Bengal
     currentLat = 23.23; currentLon = 87.85;
     onLocationReady('Bardhaman, West Bengal');
     return;
@@ -240,10 +280,7 @@ function initGeolocation() {
       currentLon = pos.coords.longitude;
       reverseGeocode(currentLat, currentLon);
     },
-    () => {
-      currentLat = 23.23; currentLon = 87.85;
-      onLocationReady('Bardhaman, West Bengal');
-    },
+    () => { currentLat = 23.23; currentLon = 87.85; onLocationReady('Bardhaman, West Bengal'); },
     { timeout: 8000 }
   );
 }
@@ -269,25 +306,14 @@ function onLocationReady(name) {
 
 // ─── WEATHER ─────────────────────────────────────────────────────
 function fetchWeather(lat, lon) {
-  // Show loading shimmer
-  document.querySelectorAll('.wc-val').forEach(el => {
-    el.textContent = '...';
-  });
-
+  document.querySelectorAll('.wc-val').forEach(el => { el.textContent = '...'; });
   fetch(`${WEATHER_API}?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`)
-    .then(r => {
-      if (!r.ok) throw new Error('Weather API error');
-      return r.json();
-    })
+    .then(r => { if (!r.ok) throw new Error('Weather API error'); return r.json(); })
     .then(d => renderWeather(d))
-    .catch(() => {
-      // Inject mock data so UI isn't empty
-      renderWeather(mockWeatherData(lat));
-    });
+    .catch(() => { renderWeather(mockWeatherData(lat)); });
 }
 
 function mockWeatherData(lat) {
-  // Realistic mock for demo
   const isHot = lat < 25;
   return {
     main: { temp: isHot ? 38 : 29, humidity: 72, pressure: 1008 },
@@ -305,8 +331,7 @@ function renderWeather(d) {
   setWCard('pressure', d.main.pressure, ((d.main.pressure - 950) / 100) * 100, 100);
   setWCard('visibility', ((d.visibility || 10000) / 1000).toFixed(1), (d.visibility || 10000) / 100, 100);
   setWCard('rain', d.rain ? Math.round((d.rain['1h'] || 0) * 100) : 0, d.rain ? (d.rain['1h'] || 0) * 100 : 0, 100);
-  setWCard('uv', '—', 55, 100); // OWM UV needs separate call; show placeholder
-  // Condition
+  setWCard('uv', '—', 55, 100);
   const condEl = document.getElementById('wVal-condition');
   if (condEl) condEl.textContent = d.weather[0]?.main || 'Clear';
   const iconEl = document.getElementById('wcIcon-condition');
@@ -331,10 +356,8 @@ function conditionEmoji(main) {
 // ─── PREDICTION ───────────────────────────────────────────────────
 async function runPrediction() {
   if (!currentLat) { showToast('Detecting your location...', 'info'); return; }
-
   const spinIcon = document.getElementById('spinIcon');
   if (spinIcon) spinIcon.classList.add('spinning');
-
   try {
     const res = await fetch(`${BASE_URL}/api/predict`, {
       method: 'POST',
@@ -345,7 +368,6 @@ async function runPrediction() {
     const data = await res.json();
     renderPrediction(data);
   } catch (e) {
-    // Fallback mock — shows as low risk clear
     renderPrediction({
       flood_probability: 18, cyclone_probability: 8, heatwave_probability: 30,
       predicted_disaster: 'None', confidence: 30, alert: false,
@@ -358,11 +380,9 @@ async function runPrediction() {
 }
 
 function renderPrediction(data) {
-  // Probability bars
   animateProbBar('floodBar', 'floodPct', data.flood_probability);
   animateProbBar('cycloneBar', 'cyclonePct', data.cyclone_probability);
   animateProbBar('heatBar', 'heatPct', data.heatwave_probability);
-
   if (data.alert) {
     const dtype = (data.predicted_disaster || 'flood').toLowerCase();
     currentDisaster = dtype;
@@ -392,33 +412,27 @@ function animateProbBar(barId, pctId, value) {
 
 // ─── DISASTER / CLEAR UI ─────────────────────────────────────────
 function applyDisasterUI(dtype, confidence) {
-  const card = document.getElementById('statusCard');
-  const icon = document.getElementById('statusIcon');
+  const card  = document.getElementById('statusCard');
+  const icon  = document.getElementById('statusIcon');
   const badge = document.getElementById('statusBadge');
   const title = document.getElementById('statusTitle');
-  const desc = document.getElementById('statusDesc');
-  const meta = document.getElementById('scMeta');
-
+  const desc  = document.getElementById('statusDesc');
+  const meta  = document.getElementById('scMeta');
   const configs = {
-    flood: { icon: '🌊', badge: t('flood_alert'), title: t('flood_alert'), desc: t('flood_desc'), cls: 'disaster-flood' },
-    cyclone: { icon: '🌀', badge: t('cyclone_alert'), title: t('cyclone_alert'), desc: t('cyclone_desc'), cls: 'disaster-cyclone' },
-    heatwave: { icon: '🌡', badge: t('heat_alert'), title: t('heat_alert'), desc: t('heat_desc'), cls: 'disaster-heat' },
+    flood:    { icon: '🌊', badge: t('flood_alert'),   title: t('flood_alert'),   desc: t('flood_desc'),   cls: 'disaster-flood'   },
+    cyclone:  { icon: '🌀', badge: t('cyclone_alert'), title: t('cyclone_alert'), desc: t('cyclone_desc'), cls: 'disaster-cyclone' },
+    heatwave: { icon: '🌡', badge: t('heat_alert'),    title: t('heat_alert'),    desc: t('heat_desc'),    cls: 'disaster-heat'    },
   };
   const cfg = configs[dtype] || configs.flood;
-
   card.className = 'status-card ' + cfg.cls;
-  icon.textContent = cfg.icon;
+  icon.textContent  = cfg.icon;
   badge.textContent = cfg.badge;
   title.textContent = cfg.title;
-  desc.textContent = cfg.desc;
+  desc.textContent  = cfg.desc;
   if (meta) meta.innerHTML = `<span class="sc-meta-chip">Confidence: ${confidence}%</span>`;
-
-  // Map update
   updateMapForDisaster(dtype);
   const mapMsg = document.getElementById('mapStatusMsg');
   if (mapMsg) mapMsg.textContent = t('map_danger');
-
-  // Radar color
   const radar = document.getElementById('radarContainer');
   if (radar) {
     radar.style.setProperty('--rad-color', dtype === 'flood' ? '#00aaff' : dtype === 'cyclone' ? '#cc44ff' : '#ff6600');
@@ -426,64 +440,53 @@ function applyDisasterUI(dtype, confidence) {
 }
 
 function applyAllClearUI() {
-  const card = document.getElementById('statusCard');
-  const icon = document.getElementById('statusIcon');
+  const card  = document.getElementById('statusCard');
+  const icon  = document.getElementById('statusIcon');
   const badge = document.getElementById('statusBadge');
   const title = document.getElementById('statusTitle');
-  const desc = document.getElementById('statusDesc');
-  const meta = document.getElementById('scMeta');
-
-  card.className = 'status-card';
-  icon.textContent = '🛡';
+  const desc  = document.getElementById('statusDesc');
+  const meta  = document.getElementById('scMeta');
+  card.className    = 'status-card';
+  icon.textContent  = '🛡';
   badge.textContent = t('badge_clear');
   badge.setAttribute('data-i18n', 'badge_clear');
   title.textContent = t('status_safe_title');
-  desc.textContent = t('status_safe_desc');
+  desc.textContent  = t('status_safe_desc');
   if (meta) meta.innerHTML = '';
-
   updateMapSafe();
   const mapMsg = document.getElementById('mapStatusMsg');
   if (mapMsg) mapMsg.textContent = t('map_safe');
-
-  // Mitigation hide
-  document.getElementById('mitGrid').style.display = 'none';
-  document.getElementById('severityRow').style.display = 'none';
+  document.getElementById('mitGrid').style.display        = 'none';
+  document.getElementById('severityRow').style.display    = 'none';
   document.getElementById('mitPlaceholder').style.display = 'flex';
 }
 
 // ─── SIMULATION ───────────────────────────────────────────────────
 async function simulateDisaster(dtype) {
   currentDisaster = dtype;
-  isSimulating = true;
-
+  isSimulating    = true;
   const probs = {
-    flood: { flood_probability: 84, cyclone_probability: 20, heatwave_probability: 15, confidence: 84 },
-    cyclone: { flood_probability: 22, cyclone_probability: 91, heatwave_probability: 10, confidence: 91 },
-    heatwave: { flood_probability: 10, cyclone_probability: 8, heatwave_probability: 88, confidence: 88 },
+    flood:    { flood_probability: 84, cyclone_probability: 20, heatwave_probability: 15, confidence: 84 },
+    cyclone:  { flood_probability: 22, cyclone_probability: 91, heatwave_probability: 10, confidence: 91 },
+    heatwave: { flood_probability: 10, cyclone_probability: 8,  heatwave_probability: 88, confidence: 88 },
   };
   const p = probs[dtype];
-
-  animateProbBar('floodBar', 'floodPct', p.flood_probability);
+  animateProbBar('floodBar',   'floodPct',   p.flood_probability);
   animateProbBar('cycloneBar', 'cyclonePct', p.cyclone_probability);
-  animateProbBar('heatBar', 'heatPct', p.heatwave_probability);
-
+  animateProbBar('heatBar',    'heatPct',    p.heatwave_probability);
   applyDisasterUI(dtype, p.confidence);
   scrollToSection('predictionSection');
-
   await fetchMitigation(dtype, p.confidence);
-
   const label = { flood: '🌊 Flood', cyclone: '🌀 Cyclone', heatwave: '🌡 Heatwave' }[dtype];
   showToast(`${label} simulation activated`, 'warn');
 }
 
 function resetSimulation() {
   currentDisaster = null;
-  isSimulating = false;
-
-  animateProbBar('floodBar', 'floodPct', 0);
+  isSimulating    = false;
+  animateProbBar('floodBar',   'floodPct',   0);
   animateProbBar('cycloneBar', 'cyclonePct', 0);
-  animateProbBar('heatBar', 'heatPct', 0);
-
+  animateProbBar('heatBar',    'heatPct',    0);
   applyAllClearUI();
   showToast('Simulation reset — All Clear ✅', 'success');
   scrollToSection('predictionSection');
@@ -495,11 +498,7 @@ async function fetchMitigation(dtype, probability) {
     const res = await fetch(`${BASE_URL}/api/mitigation`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_type: currentUserType,
-        disaster: dtype,
-        probability: Math.round(probability)
-      })
+      body: JSON.stringify({ user_type: currentUserType, disaster: dtype, probability: Math.round(probability) })
     });
     if (!res.ok) throw new Error('Mitigation API error');
     const data = await res.json();
@@ -525,7 +524,7 @@ function mockMitigation(dtype, userType) {
         'Do not touch electrical equipment if wet',
         'Do not ignore official warnings',
         'Do not drive through flooded roads',
-        'Do not return home until authorities say it\'s safe'
+        "Do not return home until authorities say it's safe"
       ],
       emergency_kit: ['Flashlight & batteries', 'First aid kit', 'Bottled water (3-day supply)', 'Important documents', 'Warm clothing & blankets']
     },
@@ -566,7 +565,6 @@ function mockMitigation(dtype, userType) {
       emergency_kit: ['ORS packets', 'Cooling towels', 'Sunscreen & hat', 'Plenty of water', 'Fan / cooling device']
     }
   };
-
   if (userType === 'farmer' && dtype === 'flood') {
     base.flood.things_to_do[0] = 'Move livestock to higher ground immediately';
     base.flood.things_to_do[1] = 'Harvest standing crops urgently if safe to do so';
@@ -574,87 +572,41 @@ function mockMitigation(dtype, userType) {
   if (userType === 'elderly') {
     base[dtype].things_to_do.push('Contact family members and inform them of your location');
   }
-
   return base[dtype] || base.flood;
 }
 
 async function renderMitigation(data) {
   document.getElementById('mitPlaceholder').style.display = 'none';
-
   const severityRow = document.getElementById('severityRow');
-  const chip = document.getElementById('severityChip');
+  const chip        = document.getElementById('severityChip');
   severityRow.style.display = 'flex';
-  chip.textContent = data.severity;
-  chip.className = 'sev-chip sev-' + (data.severity || 'Medium').toLowerCase();
-
-  data.things_to_do =
-    await translateContent(
-      data.things_to_do
-    );
-
-  data.things_not_to_do =
-    await translateContent(
-      data.things_not_to_do
-    );
-
-  data.emergency_kit =
-    await translateContent(
-      data.emergency_kit
-    );
-
-  populateList(
-    'doList',
-    data.things_to_do
-  );
-
-  populateList(
-    'dontList',
-    data.things_not_to_do
-  );
-
-  populateList(
-    'kitList',
-    data.emergency_kit
-  );
-
+  chip.textContent  = data.severity;
+  chip.className    = 'sev-chip sev-' + (data.severity || 'Medium').toLowerCase();
+  data.things_to_do     = await translateContent(data.things_to_do);
+  data.things_not_to_do = await translateContent(data.things_not_to_do);
+  data.emergency_kit    = await translateContent(data.emergency_kit);
+  populateList('doList',   data.things_to_do);
+  populateList('dontList', data.things_not_to_do);
+  populateList('kitList',  data.emergency_kit);
   document.getElementById('mitGrid').style.display = 'grid';
   scrollToSection('mitigationSection');
 }
+
 async function translateContent(texts) {
-
-  if (currentLang === "en")
-    return texts;
-
+  if (currentLang === 'en') return texts;
   const translated = [];
-
   for (const text of texts) {
-
     try {
-
       const res = await fetch(
-        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl="
-        + langMap[currentLang]
-        + "&dt=t&q="
-        + encodeURIComponent(text)
+        'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=' +
+        langMap[currentLang] + '&dt=t&q=' + encodeURIComponent(text)
       );
-
       const data = await res.json();
-
       translated.push(data[0][0][0]);
-
     } catch (error) {
-
-      console.log(
-        "Translation failed:",
-        error
-      );
-
       translated.push(text);
-
     }
-
   }
-
   return translated;
 }
 
@@ -684,33 +636,80 @@ function speakBubble(btn) {
   if (p) speakText(p.textContent);
 }
 
-function speakText(text) {
-  if (!speechSynth) return;
-  speechSynth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = speechLangCodes[currentLang] || 'en-IN';
-  utt.rate = 0.9;
-  utt.pitch = 1;
-  speechSynth.speak(utt);
+// ─── WEBSOCKET ────────────────────────────────────────────────────
+function ensureVoiceWs() {
+  if (voiceWs && voiceWs.readyState === WebSocket.OPEN) return voiceWs;
+
+  const wsUrl = BASE_URL.replace(/^http/, 'ws') + '/api/ws/voice-chat';
+  voiceWs = new WebSocket(wsUrl);
+
+  voiceWs.onopen = () => {
+    clearTimeout(wsReconnectTimer);
+    console.log('[WS] connected');
+  };
+
+  voiceWs.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+
+    if (msg.type === 'chunk') {
+      // Accumulate text and update the live bubble
+      ttsBuffer += msg.text;
+      const bubble = document.getElementById('streaming-bubble');
+      if (bubble) bubble.querySelector('p').textContent += msg.text;
+      // Don't speak yet — wait for 'done' so all sentences play in order
+    }
+
+    if (msg.type === 'done') {
+      // Speak the full answer at once via the queue so nothing is cancelled mid-sentence
+      if (ttsBuffer.trim()) {
+        // Split into sentences and enqueue each so they play sequentially
+        // FIX: uses enqueueSpeech (not speakText) to avoid cancel-between-sentences bug
+        const sentences = ttsBuffer.match(/[^.!?\n]+[.!?\n]+/g) || [ttsBuffer];
+        sentences.forEach(s => enqueueSpeech(s.trim()));
+        // Speak any trailing fragment not ending in punctuation
+        const joined = sentences.join('');
+        const remainder = ttsBuffer.slice(joined.length).trim();
+        if (remainder) enqueueSpeech(remainder);
+        ttsBuffer = '';
+      }
+
+      // Finalise the streaming bubble
+      const bubble = document.getElementById('streaming-bubble');
+      if (bubble) {
+        bubble.removeAttribute('id');
+        const p = bubble.querySelector('p');
+        if (p) p.innerHTML += ` <button class="bubble-speak" onclick="speakBubble(this)">🔊</button>`;
+      }
+      if (currentTypingId) { removeTypingIndicator(currentTypingId); currentTypingId = null; }
+    }
+
+    if (msg.type === 'error') {
+      if (currentTypingId) { removeTypingIndicator(currentTypingId); currentTypingId = null; }
+      addChatMsg(msg.text || 'Something went wrong. Try again.', 'ai');
+    }
+  };
+
+  voiceWs.onerror = () => console.warn('[WS] error');
+  voiceWs.onclose = () => {
+    console.warn('[WS] closed — reconnecting in 3s');
+    wsReconnectTimer = setTimeout(ensureVoiceWs, 3000);
+  };
+
+  return voiceWs;
 }
 
 // ─── VOICE INPUT ──────────────────────────────────────────────────
 function toggleVoiceInput() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    showToast('Voice input not supported in your browser', 'warn');
-    return;
-  }
+  if (!SpeechRecognition) { showToast('Voice input not supported in your browser', 'warn'); return; }
+  if (isListening) { stopVoiceInput(); return; }
 
-  if (isListening) {
-    stopVoiceInput();
-    return;
-  }
+  ensureVoiceWs();
 
   recognition = new SpeechRecognition();
-  recognition.lang = speechLangCodes[currentLang] || 'en-IN';
-  recognition.continuous = false;
-  recognition.interimResults = false;
+  recognition.lang            = speechLangCodes[currentLang] || 'en-IN';
+  recognition.continuous      = true;
+  recognition.interimResults  = true;
 
   recognition.onstart = () => {
     isListening = true;
@@ -719,20 +718,27 @@ function toggleVoiceInput() {
   };
 
   recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    document.getElementById('chatInput').value = transcript;
-    stopVoiceInput();
-    sendChatMessage();
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    const inp = document.getElementById('chatInput');
+    if (inp) inp.value = final || interim;
+    if (final.trim()) {
+      if (inp) inp.value = '';
+      sendVoiceQuestion(final.trim());
+    }
   };
 
   recognition.onerror = () => { stopVoiceInput(); showToast('Voice recognition error. Try again.', 'warn'); };
-  recognition.onend = () => stopVoiceInput();
+  recognition.onend   = () => { if (isListening) recognition.start(); };
   recognition.start();
 }
 
 function stopVoiceInput() {
   isListening = false;
-  if (recognition) recognition.stop();
+  if (recognition) { recognition.onend = null; recognition.stop(); }
   const micBtn = document.getElementById('micBtn');
   if (micBtn) micBtn.classList.remove('active-mic');
   const vb = document.getElementById('voiceBar');
@@ -743,6 +749,7 @@ function stopVoiceInput() {
 function openVoiceModal() {
   document.getElementById('voiceModal').classList.add('open');
   setTimeout(() => document.getElementById('chatInput')?.focus(), 300);
+  ensureVoiceWs();
 }
 
 function closeVoiceModal() {
@@ -754,55 +761,88 @@ function handleOverlayClick(e) {
   if (e.target.id === 'voiceModal') closeVoiceModal();
 }
 
+function sendVoiceQuestion(question) {
+  if (!question) return;
+
+  addChatMsg(question, 'user');
+  ttsBuffer = '';
+
+  // Clear TTS queue so old speech doesn't bleed into the new response
+  _ttsQueue   = [];
+  _ttsPlaying = false;
+  speechSynth.cancel();
+
+  const ws = ensureVoiceWs();
+
+  if (ws.readyState !== WebSocket.OPEN) {
+    sendChatMessageREST(question);
+    return;
+  }
+
+  const win = document.getElementById('chatWindow');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ai-msg';
+  div.id        = 'streaming-bubble';
+  div.innerHTML = `<div class="cm-av">🤖</div><div class="cm-bubble"><p></p></div>`;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+
+  ws.send(JSON.stringify({
+    question,
+    user_type: currentUserType,
+    location: document.getElementById('locationNameEl')?.textContent || ''
+  }));
+}
+
 async function sendChatMessage() {
-  const input = document.getElementById('chatInput');
+  const input    = document.getElementById('chatInput');
   const question = input.value.trim();
   if (!question) return;
   input.value = '';
+  sendVoiceQuestion(question);
+}
 
-  addChatMsg(question, 'user');
-
-  // Typing indicator
-  const typingId = 'typing-' + Date.now();
-  addTypingIndicator(typingId);
-
+async function sendChatMessageREST(question) {
+  currentTypingId = 'typing-' + Date.now();
+  addTypingIndicator(currentTypingId);
   try {
     const res = await fetch(`${BASE_URL}/api/voice-chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        question: question,
+        question,
         user_type: currentUserType,
         location: document.getElementById('locationNameEl')?.textContent || ''
       })
     });
     if (!res.ok) throw new Error('Chat API error');
     const data = await res.json();
-    removeTypingIndicator(typingId);
+    removeTypingIndicator(currentTypingId);
+    currentTypingId = null;
     addChatMsg(data.answer, 'ai');
-  } catch (e) {
-    removeTypingIndicator(typingId);
-    const fallback = generateFallbackResponse(question);
-    addChatMsg(fallback, 'ai');
+    speakText(data.answer);
+  } catch {
+    removeTypingIndicator(currentTypingId);
+    currentTypingId = null;
+    addChatMsg(generateFallbackResponse(question), 'ai');
   }
 }
 
 function generateFallbackResponse(question) {
   const q = question.toLowerCase();
   if (q.includes('flood') || q.includes('বন্যা') || q.includes('बाढ़'))
-    return 'During a flood: move to higher ground immediately, avoid walking through floodwater, and follow official evacuation orders. Keep emergency kit ready.';
+    return 'During a flood: move to higher ground immediately, avoid walking through floodwater, and follow official evacuation orders.';
   if (q.includes('cyclone') || q.includes('ঘূর্ণিঝড়') || q.includes('चक्रवात'))
-    return 'During a cyclone: seek shelter in a strong building, stay away from windows, stock food & water for 72 hours, and monitor official alerts.';
+    return 'During a cyclone: seek shelter in a strong building, stay away from windows, and monitor official alerts.';
   if (q.includes('heat') || q.includes('তাপ') || q.includes('গরম') || q.includes('गर्मी'))
-    return 'During a heatwave: stay indoors between 11am-4pm, drink plenty of water, wear light clothing, and avoid outdoor activity.';
-  return 'APADAMITRA AI monitors floods, cyclones, and heatwaves. Ask me about disaster preparedness, safety tips, or what to do during an emergency in your area.';
+    return 'During a heatwave: stay indoors between 11am-4pm, drink plenty of water, and avoid outdoor activity.';
+  return 'I only answer questions about weather, disasters, and emergency preparedness. Please ask me something within those topics.';
 }
 
 function addChatMsg(text, role) {
   const win = document.getElementById('chatWindow');
   const div = document.createElement('div');
   div.className = `chat-msg ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
-
   if (role === 'ai') {
     div.innerHTML = `
       <div class="cm-av">🤖</div>
@@ -813,7 +853,6 @@ function addChatMsg(text, role) {
   } else {
     div.innerHTML = `<div class="cm-bubble user-bubble"><p>${text}</p></div>`;
   }
-
   win.appendChild(div);
   win.scrollTop = win.scrollHeight;
 }
@@ -822,7 +861,7 @@ function addTypingIndicator(id) {
   const win = document.getElementById('chatWindow');
   const div = document.createElement('div');
   div.className = 'chat-msg ai-msg';
-  div.id = id;
+  div.id        = id;
   div.innerHTML = `<div class="cm-av">🤖</div><div class="cm-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
   win.appendChild(div);
   win.scrollTop = win.scrollHeight;
@@ -837,27 +876,19 @@ function removeTypingIndicator(id) {
 function initMap(lat, lon) {
   if (map) { map.remove(); map = null; }
   map = L.map('safetyMap', { zoomControl: true, attributionControl: true }).setView([lat, lon], 11);
-
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© CartoDB',
-    subdomains: 'abcd',
-    maxZoom: 19
+    attribution: '© CartoDB', subdomains: 'abcd', maxZoom: 19
   }).addTo(map);
-
-  // User marker
   userMarker = L.circleMarker([lat, lon], {
-    radius: 10, fillColor: '#00c8ff', color: '#fff',
-    weight: 2, opacity: 1, fillOpacity: 0.9
+    radius: 10, fillColor: '#00c8ff', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
   }).addTo(map).bindPopup('📍 Your Location').openPopup();
-
   drawSafeZone(lat, lon);
 }
 
 function drawSafeZone(lat, lon) {
   clearMapLayers();
   const safeCircle = L.circle([lat, lon], {
-    radius: 15000, color: '#00ff88', fillColor: '#00ff88',
-    fillOpacity: 0.08, weight: 1.5, dashArray: '6 4'
+    radius: 15000, color: '#00ff88', fillColor: '#00ff88', fillOpacity: 0.08, weight: 1.5, dashArray: '6 4'
   }).addTo(map);
   mapLayers.safe.push(safeCircle);
 }
@@ -865,33 +896,21 @@ function drawSafeZone(lat, lon) {
 function updateMapForDisaster(dtype) {
   if (!map || !currentLat) return;
   clearMapLayers();
-
   const lat = currentLat; const lon = currentLon;
   const dangerColor = dtype === 'cyclone' ? '#cc44ff' : dtype === 'heatwave' ? '#ff6600' : '#ff3366';
-  const warnColor = '#ffaa00';
-
-  // Danger zone (offset slightly)
+  const warnColor   = '#ffaa00';
   const dCircle = L.circle([lat + 0.05, lon - 0.04], {
-    radius: 8000, color: dangerColor, fillColor: dangerColor,
-    fillOpacity: 0.15, weight: 2
+    radius: 8000, color: dangerColor, fillColor: dangerColor, fillOpacity: 0.15, weight: 2
   }).addTo(map).bindPopup(`🚨 ${dtype.charAt(0).toUpperCase() + dtype.slice(1)} Danger Zone`);
   mapLayers.danger.push(dCircle);
-
-  // Warning zone
   const wCircle = L.circle([lat - 0.03, lon + 0.05], {
-    radius: 6000, color: warnColor, fillColor: warnColor,
-    fillOpacity: 0.1, weight: 2
+    radius: 6000, color: warnColor, fillColor: warnColor, fillOpacity: 0.1, weight: 2
   }).addTo(map).bindPopup('⚠ Warning Zone');
   mapLayers.warn.push(wCircle);
-
-  // Safe zone (smaller)
   const sCircle = L.circle([lat + 0.08, lon + 0.1], {
-    radius: 5000, color: '#00ff88', fillColor: '#00ff88',
-    fillOpacity: 0.1, weight: 1.5
+    radius: 5000, color: '#00ff88', fillColor: '#00ff88', fillOpacity: 0.1, weight: 1.5
   }).addTo(map).bindPopup('✅ Evacuation Safe Zone');
   mapLayers.safe.push(sCircle);
-
-  // Animated pulse marker at danger center
   const pulseIcon = L.divIcon({
     className: '',
     html: `<div style="width:20px;height:20px;border-radius:50%;background:${dangerColor};opacity:0.9;box-shadow:0 0 0 0 ${dangerColor};animation:mapPulse 1.2s infinite;"></div>`,
@@ -899,7 +918,6 @@ function updateMapForDisaster(dtype) {
   });
   const pulse = L.marker([lat + 0.05, lon - 0.04], { icon: pulseIcon }).addTo(map);
   mapLayers.danger.push(pulse);
-
   map.setView([lat, lon], 10, { animate: true });
 }
 
@@ -934,24 +952,19 @@ function initHeaderScroll() {
   }, { passive: true });
 }
 
-// ─── INTERSECTION OBSERVER (section entry animations) ────────────
+// ─── INTERSECTION OBSERVER ────────────────────────────────────────
 function initSectionObserver() {
   const sections = document.querySelectorAll('.page-section');
   const obs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('section-visible');
-      }
-    });
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('section-visible'); });
   }, { threshold: 0.08 });
   sections.forEach(s => obs.observe(s));
 }
 
-// ─── ADD DYNAMIC STYLES (typing dots, toast, map pulse) ──────────
+// ─── DYNAMIC STYLES ──────────────────────────────────────────────
 function injectDynamicStyles() {
   const style = document.createElement('style');
   style.textContent = `
-    /* Toast */
     .toast-wrap { position:fixed; bottom:90px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
     .toast { background:rgba(15,25,50,0.95); color:#e0e8ff; border:1px solid rgba(0,200,255,0.3);
       border-radius:12px; padding:12px 18px; font-size:0.85rem; font-family:'Exo 2',sans-serif;
@@ -959,54 +972,35 @@ function injectDynamicStyles() {
       transition:all 0.35s ease; max-width:280px; box-shadow:0 4px 20px rgba(0,0,0,0.4); }
     .toast.show { opacity:1; transform:translateX(0); }
     .toast-success { border-color:rgba(0,255,136,0.4); }
-    .toast-warn    { border-color:rgba(255,170,0,0.4);  }
-    .toast-error   { border-color:rgba(255,50,80,0.4);  }
-
-    /* Typing dots */
+    .toast-warn    { border-color:rgba(255,170,0,0.4); }
+    .toast-error   { border-color:rgba(255,50,80,0.4); }
     .typing-dots { display:flex; gap:5px; align-items:center; padding:4px 0; }
     .typing-dots span { width:8px; height:8px; border-radius:50%; background:#00c8ff;
       animation:typingBounce 1.2s infinite ease-in-out; }
     .typing-dots span:nth-child(2) { animation-delay:0.2s; }
     .typing-dots span:nth-child(3) { animation-delay:0.4s; }
     @keyframes typingBounce { 0%,80%,100%{transform:scale(0.7);opacity:0.5} 40%{transform:scale(1);opacity:1} }
-
-    /* Active mic */
     .active-mic { background:rgba(255,50,80,0.3) !important; border-color:rgba(255,50,80,0.6) !important; }
-
-    /* Spin */
     .spinning { animation:spin 0.8s linear infinite; display:inline-block; }
     @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-
-    /* Map pulse */
     @keyframes mapPulse {
       0%   { box-shadow:0 0 0 0 rgba(255,50,80,0.7); }
       70%  { box-shadow:0 0 0 16px rgba(255,50,80,0); }
       100% { box-shadow:0 0 0 0 rgba(255,50,80,0); }
     }
-
-    /* Severity chips */
     .sev-low      { background:rgba(0,255,136,0.2); color:#00ff88; border-color:rgba(0,255,136,0.4); }
     .sev-medium   { background:rgba(255,170,0,0.2); color:#ffaa00; border-color:rgba(255,170,0,0.4); }
     .sev-high     { background:rgba(255,80,0,0.2);  color:#ff5000; border-color:rgba(255,80,0,0.4); }
     .sev-critical { background:rgba(255,0,60,0.2);  color:#ff003c; border-color:rgba(255,0,60,0.4); }
-
-    /* User chat bubble */
     .user-bubble { background:rgba(0,200,255,0.15); border:1px solid rgba(0,200,255,0.3); margin-left:auto; }
     .user-msg    { flex-direction:row-reverse; }
-
-    /* Status card disaster states */
     .disaster-flood   { background:linear-gradient(135deg,rgba(0,100,255,0.15),rgba(0,30,80,0.4)); border-color:rgba(0,100,255,0.4); }
     .disaster-cyclone { background:linear-gradient(135deg,rgba(150,0,255,0.15),rgba(40,0,80,0.4)); border-color:rgba(150,0,255,0.4); }
     .disaster-heat    { background:linear-gradient(135deg,rgba(255,100,0,0.15),rgba(80,20,0,0.4));  border-color:rgba(255,100,0,0.4); }
-
     .sc-meta-chip { background:rgba(0,200,255,0.1); border:1px solid rgba(0,200,255,0.3);
       border-radius:20px; padding:4px 14px; font-size:0.8rem; color:#00c8ff; }
-
-    /* Section entry */
     .page-section { opacity:0; transform:translateY(24px); transition:opacity 0.6s ease, transform 0.6s ease; }
     .section-visible { opacity:1; transform:translateY(0); }
-
-    /* Modal open */
     .modal-bg.open { display:flex !important; }
   `;
   document.head.appendChild(style);
@@ -1018,14 +1012,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeaderScroll();
   initSectionObserver();
   applyI18n();
-
-  // Hide loading screen after 2.2s
   setTimeout(hideLoadingScreen, 2200);
-
-  // Start geolocation & data pipeline
   initGeolocation();
-
-  // Auto-refresh prediction every 5 minutes
   setInterval(() => {
     if (currentLat && !isSimulating) runPrediction();
   }, 5 * 60 * 1000);

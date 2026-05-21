@@ -77,6 +77,7 @@ class GeminiService:
         prompt: str,
         system_instruction: Optional[str] = None,
         temperature: float = 0.7,
+        response_mime_type: Optional[str] = None,
         max_output_tokens: int = 1024,
     ) -> Optional[str]:
 
@@ -97,11 +98,20 @@ class GeminiService:
 
                 generation_config = {
                     "temperature": temperature,
-                    "top_p": 0.95,
-                    "top_k": 64,
                     "max_output_tokens": max_output_tokens,
-                    "candidate_count": 1
+                    "response_mime_type": "application/json",
+                    "response_schema": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "answer": {
+                                "type": "STRING"
+                            }
+                        },
+                        "required": ["answer"]
+                    }
                 }
+                if response_mime_type:
+                    generation_config["response_mime_type"] = response_mime_type
 
                 response = model.generate_content(
                     prompt,
