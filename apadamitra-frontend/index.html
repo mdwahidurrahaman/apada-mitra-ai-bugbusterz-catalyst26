@@ -12,7 +12,7 @@
 <body>
 
   <!-- ═══════════ LOADING SCREEN ═══════════ -->
-  <div class="loading-screen" id="loadingScreen">
+  <!-- <div class="loading-screen" id="loadingScreen">
     <div class="ls-inner">
       <div class="ls-shield">
         <svg viewBox="0 0 80 90" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,7 +26,7 @@
       <div class="ls-sub">Initializing AI Systems...</div>
       <div class="ls-progress-wrap"><div class="ls-progress-bar"></div></div>
     </div>
-  </div>
+  </div> -->
 
   <!-- ═══════════ HEADER ═══════════ -->
   <header id="siteHeader">
@@ -97,3 +97,348 @@
     </div>
   </header>
 
+  <!-- ═══════════ HERO ═══════════ -->
+  <section id="heroSection">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-badge" data-i18n="hero_badge">⚡ AI-Powered Emergency Intelligence</div>
+        <h2 class="hero-headline">
+          <span class="hl-word w1" data-i18n="hl1">Predict.</span>
+          <span class="hl-word w2" data-i18n="hl2">Protect.</span>
+          <span class="hl-word w3" data-i18n="hl3">Survive.</span>
+        </h2>
+        <p class="hero-body" data-i18n="hero_body">
+          APADAMITRA harnesses advanced AI to detect floods, cyclones, and heatwaves before they strike — delivering personalized guidance in your language, exactly when it matters most.
+        </p>
+        <div class="hero-ctas">
+          <button class="btn-primary" onclick="runPrediction()">
+            <span class="btn-shine"></span>
+            <span>⚡ <span data-i18n="cta_live">Check Live Safety</span></span>
+          </button>
+          <button class="btn-secondary" onclick="openVoiceModal()">
+            🎙 <span data-i18n="cta_ai">Talk to AI Assistant</span>
+          </button>
+        </div>
+        <div class="hero-stats-row">
+          <div class="h-stat"><span class="hs-num">3</span><span class="hs-lbl" data-i18n="stat_disasters">Disaster Types</span></div>
+          <div class="hs-div"></div>
+          <div class="h-stat"><span class="hs-num">24/7</span><span class="hs-lbl" data-i18n="stat_monitor">AI Monitoring</span></div>
+          <div class="hs-div"></div>
+          <div class="h-stat"><span class="hs-num">3</span><span class="hs-lbl" data-i18n="stat_langs">Languages</span></div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="radar-container" id="radarContainer">
+          <div class="rad-ring rad-ring-1"></div>
+          <div class="rad-ring rad-ring-2"></div>
+          <div class="rad-ring rad-ring-3"></div>
+          <div class="rad-grid-h"></div>
+          <div class="rad-grid-v"></div>
+          <div class="rad-sweep-arm"></div>
+          <div class="rad-sweep-trail"></div>
+          <div class="rad-core">
+            <div class="rc-inner-glow"></div>
+            <span class="rc-label">RiskPulse</span>
+          </div>
+          <div class="rad-dp rd1">⛈️</div>
+          <div class="rad-dp rd2">🌪️</div>
+          <div class="rad-dp rd3">☀️</div>
+          <div class="rad-dp rd4">⚡</div>
+          <div class="rad-prt rp1"></div>
+          <div class="rad-prt rp2"></div>
+          <div class="rad-prt rp3">🔮</div>
+          <div class="rad-prt rp4">🌐</div>
+          <div class="rad-prt rp5">🛡️</div>
+          <div class="rad-blip rb1"><i class="fa-solid fa-satellite-dish"></i></div>
+          <div class="rad-blip rb2"></div>
+          <div class="rad-blip rb3">📡</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ambient bg orbs -->
+    <div class="hero-orb orb1"></div>
+    <div class="hero-orb orb2"></div>
+    <div class="hero-orb orb3"></div>
+  </section>
+
+  <!-- ═══════════ WEATHER DASHBOARD ═══════════ -->
+  <section id="weatherSection" class="page-section">
+    <div class="sec-head">
+      <div class="sec-tag" data-i18n="sec_tag_live">Live Intelligence</div>
+      <h2 class="sec-title" data-i18n="weather_title">Weather Monitoring</h2>
+      <p class="sec-desc" data-i18n="weather_desc">Real-time atmospheric intelligence for your region</p>
+      <div class="location-chip">
+        📍 <span id="locationNameEl" data-i18n="detecting_loc">Detecting location...</span>
+      </div>
+    </div>
+
+    <div class="weather-grid" id="weatherGrid">
+      <div class="w-card" id="wc-temp">
+        <div class="wc-glow-dot"></div>
+        <div class="wc-main-icon"><i class="fa-solid fa-temperature-high"></i></div>
+        <div class="wc-val-wrap">
+          <span class="wc-val" id="wVal-temp">--</span>
+          <span class="wc-unit">°C</span>
+        </div>
+        <div class="wc-label" data-i18n="w_temp">Temperature</div>
+        <div class="wc-mini-bar"><div class="wmb-fill" id="wbar-temp"></div></div>
+      </div>
+
+      <div class="w-card" id="wc-humidity">
+        <div class="wc-glow-dot"></div>
+        <div class="wc-main-icon"><i class="fa-solid fa-droplet"></i></div>
+        <div class="wc-val-wrap">
+          <span class="wc-val" id="wVal-humidity">--</span>
+          <span class="wc-unit">%</span>
+        </div>
+        <div class="wc-label" data-i18n="w_humidity">Humidity</div>
+        <div class="wc-mini-bar"><div class="wmb-fill" id="wbar-humidity"></div></div>
+      </div>
+
+      <div class="w-card" id="wc-wind">
+        <div class="wc-glow-dot"></div>
+        <div class="wc-main-icon"><i class="fa-solid fa-wind"></i></div>
+        <div class="wc-val-wrap">
+          <span class="wc-val" id="wVal-wind">--</span>
+          <span class="wc-unit">km/h</span>
+        </div>
+        <div class="wc-label" data-i18n="w_wind">Wind Speed</div>
+        <div class="wc-mini-bar"><div class="wmb-fill" id="wbar-wind"></div></div>
+      </div>
+
+      <div class="w-card" id="wc-pressure">
+        <div class="wc-glow-dot"></div>
+        <div class="wc-main-icon"><i class="fa-solid fa-gauge-high"></i></div>
+        <div class="wc-val-wrap">
+          <span class="wc-val" id="wVal-pressure">--</span>
+          <span class="wc-unit">hPa</span>
+        </div>
+        <div class="wc-label" data-i18n="w_pressure">Air Pressure</div>
+        <div class="wc-mini-bar"><div class="wmb-fill" id="wbar-pressure"></div></div>
+      </div>
+
+      <div class="w-card" id="wc-visibility">
+        <div class="wc-glow-dot"></div>
+        <div class="wc-main-icon"><i class="fa-solid fa-eye"></i></div>
+        <div class="wc-val-wrap">
+          <span class="wc-val" id="wVal-visibility">--</span>
+          <span class="wc-unit">km</span>
+        </div>
+        <div class="wc-label" data-i18n="w_visibility">Visibility</div>
+        <div class="wc-mini-bar"><div class="wmb-fill" id="wbar-visibility"></div></div>
+      </div>
+
+      <div class="w-card" id="wc-condition">
+        <div class="wc-glow-dot"></div>
+        <div class="wc-main-icon" id="wcIcon-condition"><i class="fa-solid fa-cloud-sun-rain"></i></div>
+        <div class="wc-val-wrap">
+          <span class="wc-val wc-val-sm" id="wVal-condition">--</span>
+        </div>
+        <div class="wc-label" data-i18n="w_condition">Condition</div>
+        <div class="wc-mini-bar"><div class="wmb-fill" style="width:55%"></div></div>
+      </div>
+
+      <div class="w-card" id="wc-rain">
+        <div class="wc-glow-dot"></div>
+        <div class="wc-main-icon"><i class="fa-solid fa-cloud-rain"></i></div>
+        <div class="wc-val-wrap">
+          <span class="wc-val" id="wVal-rain">--</span>
+          <span class="wc-unit">%</span>
+        </div>
+        <div class="wc-label" data-i18n="w_rain">Rain Probability</div>
+        <div class="wc-mini-bar"><div class="wmb-fill" id="wbar-rain"></div></div>
+      </div>
+
+      <div class="w-card" id="wc-uv">
+        <div class="wc-glow-dot"></div>
+        <div class="wc-main-icon"><i class="fa-solid fa-sun"></i></div>
+        <div class="wc-val-wrap">
+          <span class="wc-val" id="wVal-uv">--</span>
+          <span class="wc-unit">UV</span>
+        </div>
+        <div class="wc-label" data-i18n="w_uv">UV Index</div>
+        <div class="wc-mini-bar"><div class="wmb-fill" id="wbar-uv"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ DISASTER PREDICTION HUB ═══════════ -->
+  <section id="predictionSection" class="page-section">
+    <div class="sec-head">
+      <div class="sec-tag" data-i18n="sec_tag_ai">AI Analysis</div>
+      <h2 class="sec-title" data-i18n="pred_title">Disaster Intelligence Hub</h2>
+      <p class="sec-desc" data-i18n="pred_desc">Advanced AI threat assessment for your location</p>
+    </div>
+
+    <!-- Probability Bars -->
+    <div class="prob-grid">
+      <div class="prob-row">
+        <div class="prob-meta">
+          <span class="prob-name">🌊 <span data-i18n="prob_flood">Flood Probability</span></span>
+          <span class="prob-pct" id="floodPct">0%</span>
+        </div>
+        <div class="prob-track"><div class="prob-fill flood-fill" id="floodBar" style="width:0%"></div></div>
+      </div>
+      <div class="prob-row">
+        <div class="prob-meta">
+          <span class="prob-name">🌀 <span data-i18n="prob_cyclone">Cyclone Probability</span></span>
+          <span class="prob-pct" id="cyclonePct">0%</span>
+        </div>
+        <div class="prob-track"><div class="prob-fill cyclone-fill" id="cycloneBar" style="width:0%"></div></div>
+      </div>
+      <div class="prob-row">
+        <div class="prob-meta">
+          <span class="prob-name">🌡 <span data-i18n="prob_heat">Heatwave Probability</span></span>
+          <span class="prob-pct" id="heatPct">0%</span>
+        </div>
+        <div class="prob-track"><div class="prob-fill heat-fill" id="heatBar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Main Status Card -->
+    <div class="status-card" id="statusCard">
+      <div class="sc-ambient-glow" id="scGlow"></div>
+      <div class="sc-layout">
+        <div class="sc-icon-zone">
+          <div class="sc-pulse-ring1" id="scPulse1"></div>
+          <div class="sc-pulse-ring2" id="scPulse2"></div>
+          <div class="sc-main-icon" id="statusIcon">🛡</div>
+        </div>
+        <div class="sc-content">
+          <div class="sc-alert-badge" id="statusBadge" data-i18n="badge_clear">ALL CLEAR</div>
+          <h3 class="sc-title" id="statusTitle" data-i18n="status_safe_title">No Immediate Threat Detected</h3>
+          <p class="sc-body" id="statusDesc" data-i18n="status_safe_desc">Your area is currently safe. APADAMITRA AI is actively monitoring atmospheric conditions around the clock.</p>
+          <div class="sc-meta" id="scMeta"></div>
+        </div>
+      </div>
+      <div class="sc-footer">
+        <button class="sc-refresh" onclick="runPrediction()">
+          <span class="spin-icon" id="spinIcon">↻</span>
+          <span data-i18n="refresh_analysis">Refresh Analysis</span>
+        </button>
+        <div class="sc-live-dot">
+          <div class="live-pulse"></div>
+          <span data-i18n="live_monitoring">Live Monitoring</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DEMO SIMULATION ═══ -->
+    <div class="demo-sim-block">
+      <div class="dsb-header">
+        <div class="dsb-badge">
+          <span class="dsb-dot-anim"></span>
+          <span data-i18n="demo_mode">DEMO SIMULATION MODE</span>
+        </div>
+        <p class="dsb-sub" data-i18n="demo_sub">Showcase disaster scenarios for live demonstrations</p>
+      </div>
+      <div class="dsb-btn-grid">
+        <button class="dsb-btn flood-dsb" onclick="simulateDisaster('flood')">
+          <div class="dsb-inner-glow"></div>
+          <span class="dsb-icon">🌊</span>
+          <span class="dsb-lbl" data-i18n="sim_flood">Simulate Flood</span>
+          <div class="dsb-corner-light"></div>
+        </button>
+        <button class="dsb-btn cyclone-dsb" onclick="simulateDisaster('cyclone')">
+          <div class="dsb-inner-glow"></div>
+          <span class="dsb-icon">🌀</span>
+          <span class="dsb-lbl" data-i18n="sim_cyclone">Simulate Cyclone</span>
+          <div class="dsb-corner-light"></div>
+        </button>
+        <button class="dsb-btn heat-dsb" onclick="simulateDisaster('heatwave')">
+          <div class="dsb-inner-glow"></div>
+          <span class="dsb-icon">🌡</span>
+          <span class="dsb-lbl" data-i18n="sim_heat">Simulate Heatwave</span>
+          <div class="dsb-corner-light"></div>
+        </button>
+        <button class="dsb-btn reset-dsb" onclick="resetSimulation()">
+          <div class="dsb-inner-glow"></div>
+          <span class="dsb-icon">✅</span>
+          <span class="dsb-lbl" data-i18n="sim_reset">Reset / All Clear</span>
+          <div class="dsb-corner-light"></div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ MITIGATION STRATEGIES ═══════════ -->
+  <section id="mitigationSection" class="page-section">
+    <div class="sec-head">
+      <div class="sec-tag" data-i18n="sec_tag_guidance">AI Guidance</div>
+      <h2 class="sec-title" data-i18n="mit_title">Mitigation Strategies</h2>
+      <p class="sec-desc" data-i18n="mit_desc">Personalized emergency guidance tailored to your profile</p>
+    </div>
+
+    <div class="mit-placeholder" id="mitPlaceholder">
+      <div class="mtp-icon">🛡</div>
+      <h3 data-i18n="mit_ph_title">Awaiting Threat Assessment</h3>
+      <p data-i18n="mit_ph_desc">Run a prediction or simulate a disaster scenario to receive personalized mitigation strategies in your language.</p>
+      <button class="btn-primary sml-btn" onclick="runPrediction()">
+        <span data-i18n="run_now">Run Analysis Now</span>
+      </button>
+    </div>
+
+    <div class="mit-severity-bar" id="severityRow" style="display:none;">
+      <span data-i18n="sev_label">Severity Level:</span>
+      <span class="sev-chip" id="severityChip">--</span>
+    </div>
+
+    <div class="mit-grid" id="mitGrid" style="display:none;">
+      <div class="mit-card do-card">
+        <div class="mc-stripe do-stripe"></div>
+        <div class="mc-header">
+          <span class="mc-hdr-icon">✅</span>
+          <h3 class="mc-title" data-i18n="mit_do">What To Do</h3>
+        </div>
+        <ul class="mc-list" id="doList"></ul>
+        <button class="listen-btn" onclick="speakList('doList')">
+          🔊 <span data-i18n="listen_btn">Listen</span>
+        </button>
+      </div>
+
+      <div class="mit-card dont-card">
+        <div class="mc-stripe dont-stripe"></div>
+        <div class="mc-header">
+          <span class="mc-hdr-icon">❌</span>
+          <h3 class="mc-title" data-i18n="mit_dont">What NOT To Do</h3>
+        </div>
+        <ul class="mc-list" id="dontList"></ul>
+        <button class="listen-btn" onclick="speakList('dontList')">
+          🔊 <span data-i18n="listen_btn">Listen</span>
+        </button>
+      </div>
+
+      <div class="mit-card kit-card">
+        <div class="mc-stripe kit-stripe"></div>
+        <div class="mc-header">
+          <span class="mc-hdr-icon">🎒</span>
+          <h3 class="mc-title" data-i18n="mit_kit">Emergency Kit</h3>
+        </div>
+        <ul class="mc-list" id="kitList"></ul>
+        <button class="listen-btn" onclick="speakList('kitList')">
+          🔊 <span data-i18n="listen_btn">Listen</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ SAFETY MAP ═══════════ -->
+  <section id="mapSection" class="page-section">
+    <div class="sec-head">
+      <div class="sec-tag" data-i18n="sec_tag_geo">Geospatial Intelligence</div>
+      <h2 class="sec-title" data-i18n="map_title">Safety Intelligence Map</h2>
+      <p class="sec-desc" id="mapStatusMsg" data-i18n="map_safe">✅ You are currently in a safe zone.</p>
+    </div>
+    <div class="map-wrap">
+      <div id="safetyMap"></div>
+      <div class="map-legend">
+        <div class="ml-item"><div class="ml-dot safe-dot"></div><span data-i18n="safe_zone">Safe Zone</span></div>
+        <div class="ml-item"><div class="ml-dot warn-dot"></div><span data-i18n="warn_zone">Warning Zone</span></div>
+        <div class="ml-item"><div class="ml-dot danger-dot"></div><span data-i18n="danger_zone">Danger Zone</span></div>
+      </div>
+    </div>
+  </section>
+
+    
