@@ -1,4 +1,4 @@
-import pickle
+import joblib
 import numpy as np
 import logging
 from pathlib import Path
@@ -11,7 +11,8 @@ MODEL_DIR = Path(settings.MODEL_DIR)
 MODEL_FILES = {
     "cyclone":  ("apadamitra_cyclone_model.pkl",  "apadamitra_cyclone_scaler.pkl"),
     "flood":    ("apadamitra_flood_model.pkl",    "apadamitra_flood_scaler.pkl"),
-    "heatwave": ("apadamitra_heatwave_model.pkl", "apadamitra_heatwave_scaler.pkl"),
+    # Notebook filename uses "headwave" (typo) — keep in sync with models/
+    "heatwave": ("apadamitra_heatwave_model.pkl", "apadamitra_headwave_scaler.pkl"),
 }
 
 
@@ -21,10 +22,13 @@ def _load_pair(model_file: str, scaler_file: str):
     if not model_path.exists():
         logger.warning(f"Model not found, skipping: {model_path}")
         return None, None
-    model = pickle.load(open(model_path, "rb"))
-    scaler = pickle.load(open(scaler_path, "rb")
-                         ) if scaler_path.exists() else None
-    return model, scaler
+    try:
+        model = joblib.load(model_path)
+        scaler = joblib.load(scaler_path) if scaler_path.exists() else None
+        return model, scaler
+    except Exception as e:
+        logger.error(f"Failed to load {model_path}: {e}")
+        return None, None
 
 
 # Load all available models at startup
