@@ -47,25 +47,6 @@
       </div>
 
       <div class="header-controls">
-        <div class="selectors-row">
-          <div class="sel-wrap">
-            <select id="langSelect" onchange="setLanguage(this.value)">
-              <option value="en">🌐English</option>
-              <option value="hi">हिन्दी</option>
-              <option value="bn">বাংলা</option>
-            </select>
-          </div>
-          <div class="sel-wrap">
-            <select id="userTypeSelect" onchange="setUserType(this.value)">
-              <option value="farmer">🌾 Farmer</option>
-              <option value="student">📚 Student</option>
-              <option value="elderly">👴 Elderly</option>
-              <option value="worker">👷 Worker</option>
-              <option value="industry">🏭 Industry</option>
-              <option value="general">👤 General</option>
-            </select>
-          </div>
-        </div>
         <nav class="desktop-nav" id="desktopNav">
           <button class="nav-btn" onclick="scrollToSection('weatherSection')">
             <span class="nb-icon">🌤</span>
@@ -84,6 +65,39 @@
             <span data-i18n="nav_map">Safety Map</span>
           </button>
         </nav>
+        <!-- Dark / Light Mode Toggle -->
+        <button class="dark-toggle" id="darkModeToggle" onclick="toggleDarkMode()" aria-label="Toggle Dark/Light Mode" title="Toggle Dark/Light Mode">
+          <span id="darkModeIcon">☀️</span>
+        </button>
+
+        <!-- Auth Button (shown when NOT logged in) -->
+        <button class="auth-header-btn" id="authBtn" onclick="openAuthModal('login')">
+          <span class="ahb-icon">👤</span>
+          <span class="ahb-lbl">Login</span>
+        </button>
+
+        <!-- Profile Button (shown when logged in) -->
+        <div class="profile-wrap" id="profileWrap" style="display:none; position:relative;">
+          <button class="profile-btn" id="profileBtn" onclick="toggleProfileDropdown()">
+            <div class="profile-initial" id="profileInitial">U</div>
+            <span class="pb-chevron">▾</span>
+          </button>
+          <div class="profile-dropdown" id="profileDropdown">
+            <div class="pd-header">
+              <div class="pd-avatar" id="pdAvatar">U</div>
+              <div class="pd-info">
+                <div class="pd-name" id="pdName">User</div>
+                <div class="pd-email" id="pdEmail">user@email.com</div>
+              </div>
+            </div>
+            <div class="pd-details">
+              <div class="pd-row"><span class="pd-row-lbl">🌐 Language</span><span class="pd-row-val" id="pdLang">English</span></div>
+              <div class="pd-row"><span class="pd-row-lbl">👤 Role</span><span class="pd-row-val" id="pdRole">Farmer</span></div>
+            </div>
+            <button class="pd-logout" onclick="logout()">🚪 Sign Out</button>
+          </div>
+        </div>
+
         <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Menu">
           <span></span><span></span><span></span>
         </button>
@@ -497,9 +511,117 @@
 <!-- ═══════════ TOAST CONTAINER ═══════════ -->
 <div class="toast-wrap" id="toastWrap"></div>
 
+<!-- ═══════════ AUTH MODAL ═══════════ -->
+<div class="modal-bg auth-modal-bg" id="authModal" onclick="handleAuthOverlayClick(event)">
+  <div class="auth-modal-box" id="authModalBox">
+    <button class="modal-x auth-x" onclick="closeAuthModal()">✕</button>
+
+    <!-- Branding -->
+    <div class="auth-brand">
+      <div class="auth-brand-icon">
+        <svg viewBox="0 0 60 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M30 3L5 15V32C5 48 16 62 30 67C44 62 55 48 55 32V15L30 3Z"
+            fill="rgba(0,200,255,0.06)" stroke="rgba(0,200,255,0.5)" stroke-width="1.2"/>
+          <path d="M30 15L38 29H22L30 15Z" fill="#00c8ff"/>
+          <path d="M22 29L30 44L38 29" stroke="#00c8ff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="auth-brand-name">APADAMITRA</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" id="signupTab" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginForm" class="auth-form">
+      <p class="auth-sub">Sign in to get personalized alerts</p>
+      <div class="auth-field">
+        <label class="auth-label">📧 Email</label>
+        <input type="email" id="loginEmail" class="auth-input" placeholder="your@email.com" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">🔒 Password</label>
+        <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <div class="auth-prefs-row">
+        <div class="auth-pref-group">
+          <label class="auth-label">🌐 Language</label>
+          <select id="loginLang" class="auth-select">
+            <option value="en">🌐 English</option>
+            <option value="hi">हिन्दी</option>
+            <option value="bn">বাংলা</option>
+          </select>
+        </div>
+        <div class="auth-pref-group">
+          <label class="auth-label">👤 Role</label>
+          <select id="loginRole" class="auth-select">
+            <option value="farmer">🌾 Farmer</option>
+            <option value="student">📚 Student</option>
+            <option value="elderly">👴 Elderly</option>
+            <option value="worker">👷 Worker</option>
+            <option value="industry">🏭 Industry</option>
+            <option value="general">👤 General</option>
+          </select>
+        </div>
+      </div>
+      <button class="auth-submit" onclick="doLogin()">
+        <span class="btn-shine"></span>
+        <span>⚡ Sign In</span>
+      </button>
+      <p class="auth-switch">No account? <a class="auth-link" onclick="switchAuthTab('signup')">Sign up free</a></p>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="signupForm" class="auth-form" style="display:none;">
+      <p class="auth-sub">Create your APADAMITRA account</p>
+      <div class="auth-field">
+        <label class="auth-label">🙋 Full Name</label>
+        <input type="text" id="signupName" class="auth-input" placeholder="Your Name" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">📧 Email</label>
+        <input type="email" id="signupEmail" class="auth-input" placeholder="your@email.com" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">🔒 Password</label>
+        <input type="password" id="signupPassword" class="auth-input" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')doSignup()" />
+      </div>
+      <div class="auth-prefs-row">
+        <div class="auth-pref-group">
+          <label class="auth-label">🌐 Language</label>
+          <select id="signupLang" class="auth-select">
+            <option value="en">🌐 English</option>
+            <option value="hi">हिन्दी</option>
+            <option value="bn">বাংলা</option>
+          </select>
+        </div>
+        <div class="auth-pref-group">
+          <label class="auth-label">👤 Role</label>
+          <select id="signupRole" class="auth-select">
+            <option value="farmer">🌾 Farmer</option>
+            <option value="student">📚 Student</option>
+            <option value="elderly">👴 Elderly</option>
+            <option value="worker">👷 Worker</option>
+            <option value="industry">🏭 Industry</option>
+            <option value="general">👤 General</option>
+          </select>
+        </div>
+      </div>
+      <button class="auth-submit" onclick="doSignup()">
+        <span class="btn-shine"></span>
+        <span>🚀 Create Account</span>
+      </button>
+      <p class="auth-switch">Already a member? <a class="auth-link" onclick="switchAuthTab('login')">Sign in</a></p>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
-
-    

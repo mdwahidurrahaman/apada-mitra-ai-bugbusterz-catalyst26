@@ -1018,3 +1018,215 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentLat && !isSimulating) runPrediction();
   }, 5 * 60 * 1000);
 });
+// ═══════════════════════════════════════════════════════════════
+//  DARK / LIGHT MODE
+// ═══════════════════════════════════════════════════════════════
+let isDarkMode = true; // default is dark (existing design)
+
+function toggleDarkMode() {
+  isDarkMode = !isDarkMode;
+  const btn  = document.getElementById('darkModeIcon');
+  if (isDarkMode) {
+    document.body.classList.remove('light-mode');
+    if (btn) btn.textContent = '☀️';
+    showToast('Dark mode activated 🌙', 'info');
+  } else {
+    document.body.classList.add('light-mode');
+    if (btn) btn.textContent = '🌙';
+    showToast('Light mode activated ☀️', 'info');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTH STATE
+// ═══════════════════════════════════════════════════════════════
+let currentUser = null; // { name, email, lang, userType }
+
+const langLabels    = { en:'English', hi:'हिन्दी', bn:'বাংলা' };
+const roleLabels    = {
+  farmer:'🌾 Farmer', student:'📚 Student', elderly:'👴 Elderly',
+  worker:'👷 Worker', industry:'🏭 Industry', general:'👤 General'
+};
+
+// ── Sync auth modal selects to current header selects ──────────
+function syncAuthSelects() {
+  ['loginLang','signupLang'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = currentLang;
+  });
+  ['loginRole','signupRole'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = currentUserType;
+  });
+}
+
+// ── Open / Close ───────────────────────────────────────────────
+function openAuthModal(tab = 'login') {
+  syncAuthSelects();
+  document.getElementById('authModal').classList.add('open');
+  switchAuthTab(tab);
+  // focus first input after animation
+  setTimeout(() => {
+    const inp = document.querySelector('.auth-form:not([style*="none"]) .auth-input');
+    if (inp) inp.focus();
+  }, 320);
+}
+
+function closeAuthModal() {
+  document.getElementById('authModal').classList.remove('open');
+}
+
+function handleAuthOverlayClick(e) {
+  if (e.target.id === 'authModal') closeAuthModal();
+}
+
+// ── Tab switcher ───────────────────────────────────────────────
+function switchAuthTab(tab) {
+  const loginTab  = document.getElementById('loginTab');
+  const signupTab = document.getElementById('signupTab');
+  const loginForm = document.getElementById('loginForm');
+  const signupForm= document.getElementById('signupForm');
+
+  if (tab === 'login') {
+    loginTab.classList.add('active');
+    signupTab.classList.remove('active');
+    loginForm.style.display  = 'flex';
+    signupForm.style.display = 'none';
+  } else {
+    signupTab.classList.add('active');
+    loginTab.classList.remove('active');
+    signupForm.style.display = 'flex';
+    loginForm.style.display  = 'none';
+  }
+}
+
+// ── Login ──────────────────────────────────────────────────────
+function doLogin() {
+  const email    = (document.getElementById('loginEmail')?.value    || '').trim();
+  const password = (document.getElementById('loginPassword')?.value || '').trim();
+  const lang     =  document.getElementById('loginLang')?.value  || currentLang;
+  const role     =  document.getElementById('loginRole')?.value  || currentUserType;
+
+  if (!email)    { showToast('Please enter your email', 'warn'); return; }
+  if (!password) { showToast('Please enter your password', 'warn'); return; }
+
+  // Dummy auth — always succeeds
+  currentUser = {
+    name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    email,
+    lang,
+    userType: role
+  };
+  onAuthSuccess();
+}
+
+// ── Sign Up ────────────────────────────────────────────────────
+function doSignup() {
+  const name     = (document.getElementById('signupName')?.value     || '').trim();
+  const email    = (document.getElementById('signupEmail')?.value    || '').trim();
+  const password = (document.getElementById('signupPassword')?.value || '').trim();
+  const lang     =  document.getElementById('signupLang')?.value  || currentLang;
+  const role     =  document.getElementById('signupRole')?.value  || currentUserType;
+
+  if (!name)     { showToast('Please enter your name', 'warn'); return; }
+  if (!email)    { showToast('Please enter your email', 'warn'); return; }
+  if (!password) { showToast('Please set a password', 'warn'); return; }
+  if (password.length < 6) { showToast('Password must be at least 6 characters', 'warn'); return; }
+
+  currentUser = { name, email, lang, userType: role };
+  onAuthSuccess();
+}
+
+// ── After login / signup ───────────────────────────────────────
+function onAuthSuccess() {
+  closeAuthModal();
+
+  // Apply chosen language & role
+  setLanguage(currentUser.lang);
+  setUserType(currentUser.userType);
+
+  // Sync header selects
+  const ls = document.getElementById('langSelect');
+  const us = document.getElementById('userTypeSelect');
+  if (ls) ls.value = currentUser.lang;
+  if (us) us.value = currentUser.userType;
+
+  updateProfileUI();
+  showToast(`Welcome, ${currentUser.name}! 🎉`, 'success');
+}
+
+// ── Logout ─────────────────────────────────────────────────────
+function logout() {
+  currentUser = null;
+  closeProfileDropdown();
+  updateProfileUI();
+  showToast('Signed out successfully', 'info');
+}
+
+// ── Update profile button visibility ──────────────────────────
+function updateProfileUI() {
+  const profileWrap = document.getElementById('profileWrap');
+  const authBtn     = document.getElementById('authBtn');
+
+  if (currentUser) {
+    if (profileWrap) profileWrap.style.display = 'block';
+    if (authBtn)     authBtn.style.display     = 'none';
+
+    const initial = currentUser.name[0].toUpperCase();
+    const pdAvatar = document.getElementById('pdAvatar');
+    const profileInitial = document.getElementById('profileInitial');
+    if (pdAvatar)       pdAvatar.textContent       = initial;
+    if (profileInitial) profileInitial.textContent = initial;
+
+    const pdName  = document.getElementById('pdName');
+    const pdEmail = document.getElementById('pdEmail');
+    const pdLang  = document.getElementById('pdLang');
+    const pdRole  = document.getElementById('pdRole');
+    if (pdName)  pdName.textContent  = currentUser.name;
+    if (pdEmail) pdEmail.textContent = currentUser.email;
+    if (pdLang)  pdLang.textContent  = langLabels[currentUser.lang] || currentUser.lang;
+    if (pdRole)  pdRole.textContent  = roleLabels[currentUser.userType] || currentUser.userType;
+  } else {
+    if (profileWrap) profileWrap.style.display = 'none';
+    if (authBtn)     authBtn.style.display     = 'flex';
+  }
+}
+
+// ── Profile dropdown ───────────────────────────────────────────
+function toggleProfileDropdown() {
+  const dd = document.getElementById('profileDropdown');
+  if (dd) dd.classList.toggle('open');
+}
+
+function closeProfileDropdown() {
+  const dd = document.getElementById('profileDropdown');
+  if (dd) dd.classList.remove('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('profileWrap');
+  if (wrap && !wrap.contains(e.target)) closeProfileDropdown();
+});
+
+// ── Keep profile in sync when header selects change ─────────────
+// Wrap original setLanguage / setUserType to update profile too
+const _origSetLanguage = setLanguage;
+setLanguage = function(lang) {
+  _origSetLanguage(lang);
+  if (currentUser) {
+    currentUser.lang = lang;
+    const pdLang = document.getElementById('pdLang');
+    if (pdLang) pdLang.textContent = langLabels[lang] || lang;
+  }
+};
+
+const _origSetUserType = setUserType;
+setUserType = function(type) {
+  _origSetUserType(type);
+  if (currentUser) {
+    currentUser.userType = type;
+    const pdRole = document.getElementById('pdRole');
+    if (pdRole) pdRole.textContent = roleLabels[type] || type;
+  }
+};
