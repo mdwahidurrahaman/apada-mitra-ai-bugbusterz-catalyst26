@@ -46,14 +46,14 @@ Rules:
 
 def send_sms(phone: str, message: str) -> bool:
     # ---- SWAP THIS BLOCK IN when Twilio is ready ----
-    # from twilio.rest import Client
-    # client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-    # try:
-    #     client.messages.create(body=message, from_=settings.TWILIO_PHONE_NUMBER, to=phone)
-    #     return True
-    # except Exception as e:
-    #     logger.error(f"Twilio error {phone}: {e}")
-    #     return False
+    from twilio.rest import Client
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+    try:
+        client.messages.create(body=message, from_=settings.TWILIO_PHONE_NUMBER, to=phone)
+        return True
+    except Exception as e:
+        logger.error(f"Twilio error {phone}: {e}")
+        return False
     # -------------------------------------------------
 
     # MOCK: log to console for base version

@@ -2,11 +2,12 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import Base, engine, get_db
+from app.database import Base, engine
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.routers import auth, alerts, chat
+from app.routers import auth, alerts, chat, predict          # ← add predict
 from app.services.weather import fetch_weather, reverse_geocode
+from app.services.mitigation import _load as load_mitigation  # ← preload
 from scheduler import start_scheduler, scheduler
 
 logging.basicConfig(
@@ -18,6 +19,7 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    load_mitigation()        # preload JSON into memory at startup
     start_scheduler()
     yield
     scheduler.shutdown()
@@ -25,7 +27,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Apadamitra — Weather Alert System",
-    description="AI-powered hyperlocal weather alerts for West Bengal",
+    description="AI-powered hyperlocal disaster prediction and alerts for West Bengal",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -38,9 +40,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-app.include_router(alerts.router, prefix="/alerts", tags=["Alerts"])
-app.include_router(chat.router, prefix="/chat", tags=["Chat"])
+app.include_router(auth.router,     prefix="/auth",    tags=["Auth"])
+app.include_router(alerts.router,   prefix="/alerts",  tags=["Alerts"])
+app.include_router(predict.router,  prefix="/predict", tags=["Predict"])  # ← new
+app.include_router(chat.router,     prefix="/chat",    tags=["Chat"])
 
 
 @app.get("/health", tags=["Health"])
