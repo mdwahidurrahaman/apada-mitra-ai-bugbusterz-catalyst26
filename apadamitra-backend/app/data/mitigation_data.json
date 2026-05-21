@@ -1,0 +1,368 @@
+{
+  "FLOOD": {
+    "Farmer": {
+      "reason": "Livestock, crops, and irrigation assets are the main risk.",
+      "do": [
+        "Move livestock to raised ground immediately.",
+        "Cover stored fodder and seeds with waterproof sheets.",
+        "Shift pesticides and fertilizers above flood level.",
+        "Drain water away from crop storage areas.",
+        "Keep a small emergency feed stock ready."
+      ],
+      "dont": [
+        "Do not let animals drink floodwater.",
+        "Do not store grains on the floor.",
+        "Do not enter flooded fields.",
+        "Do not keep chemicals in open sheds.",
+        "Do not wait until water reaches the house."
+      ],
+      "kit": [
+        "Waterproof document pouch",
+        "Torch",
+        "Power bank",
+        "Animal feed for 2 days",
+        "First aid kit"
+      ]
+    },
+    "Student": {
+      "reason": "Schooling, safe transport, documents, and family contact are the main concerns.",
+      "do": [
+        "Stay with parents, teachers, or trusted adults.",
+        "Keep school bag, ID, and documents in a waterproof cover.",
+        "Move to higher ground if water rises nearby.",
+        "Save emergency contact numbers on your phone.",
+        "Follow school or local authority instructions immediately."
+      ],
+      "dont": [
+        "Do not walk through moving floodwater.",
+        "Do not use school routes that pass through low areas.",
+        "Do not touch electric switches if water is inside.",
+        "Do not ignore school closure alerts.",
+        "Do not carry heavy bags into floodwater."
+      ],
+      "kit": [
+        "Water bottle",
+        "Torch",
+        "Power bank",
+        "Whistle",
+        "Important documents in waterproof cover"
+      ]
+    },
+    "Elderly": {
+      "reason": "Mobility, medicines, and quick evacuation support are the main risks.",
+      "do": [
+        "Keep medicines, spectacles, and walking aids within reach.",
+        "Move to a safe upper floor or raised place early.",
+        "Keep emergency phone numbers visible.",
+        "Ask a family member or neighbor to assist evacuation.",
+        "Store drinking water and light food beside the bed."
+      ],
+      "dont": [
+        "Do not stay alone in a flooded area.",
+        "Do not walk in water without help.",
+        "Do not delay evacuation if water rises quickly.",
+        "Do not take medicines after they are wet or damaged.",
+        "Do not use stairs alone if visibility is poor."
+      ],
+      "kit": [
+        "Daily medicines",
+        "Walking stick",
+        "Water bottle",
+        "Torch",
+        "Emergency contact list"
+      ]
+    },
+    "Worker": {
+      "reason": "Commute safety, workplace equipment, and wage-loss risk are the main concerns.",
+      "do": [
+        "Stop travel if roads are flooded.",
+        "Secure tools, documents, and work materials in waterproof bags.",
+        "Inform your employer or supervisor early.",
+        "Move to a safe shelter before water rises.",
+        "Keep a phone charger and cash ready."
+      ],
+      "dont": [
+        "Do not drive or ride through deep water.",
+        "Do not go to work through unsafe routes.",
+        "Do not touch wet electrical equipment.",
+        "Do not continue outdoor labor in floodwater.",
+        "Do not delay reporting unsafe conditions."
+      ],
+      "kit": [
+        "Torch",
+        "Power bank",
+        "Water bottle",
+        "Dry clothes",
+        "First aid kit"
+      ]
+    },
+    "Industry": {
+      "reason": "Machinery, chemicals, data, and worker safety are the main risks.",
+      "do": [
+        "Move critical machinery and stock to higher floors.",
+        "Shut down unsafe electrical systems before water enters.",
+        "Protect documents, servers, and backup data.",
+        "Seal chemical storage areas properly.",
+        "Activate flood emergency response and evacuation plan."
+      ],
+      "dont": [
+        "Do not continue operations in flooded zones.",
+        "Do not allow staff to enter waterlogged areas.",
+        "Do not store chemicals near drains or low floors.",
+        "Do not ignore backup power safety checks.",
+        "Do not restart equipment until inspection is done."
+      ],
+      "kit": [
+        "Emergency response plan",
+        "Backup generator",
+        "Two-way radio",
+        "First aid kits",
+        "Waterproof file storage"
+      ]
+    }
+  },
+  "CYCLONE": {
+    "Farmer": {
+      "reason": "Crops, livestock shelters, and outdoor farm structures are highly exposed to wind damage.",
+      "do": [
+        "Move livestock to a strong closed shelter.",
+        "Tie down or bring inside loose farm equipment.",
+        "Protect seed stock and harvested produce.",
+        "Reinforce shed doors and windows.",
+        "Keep emergency feed and water ready."
+      ],
+      "dont": [
+        "Do not stay near trees, poles, or tin roofs.",
+        "Do not leave livestock outside during strong winds.",
+        "Do not use open flames if power fails.",
+        "Do not travel to the farm during peak storm time.",
+        "Do not ignore official evacuation alerts."
+      ],
+      "kit": [
+        "Torch",
+        "Power bank",
+        "Whistle",
+        "Dry food",
+        "First aid kit"
+      ]
+    },
+    "Student": {
+      "reason": "School closure, family safety, and communication are the main concerns.",
+      "do": [
+        "Stay indoors with parents or guardians.",
+        "Keep school closure updates on phone or radio.",
+        "Charge your phone and power bank early.",
+        "Move away from windows and glass doors.",
+        "Keep study materials and documents dry."
+      ],
+      "dont": [
+        "Do not go outside to watch the cyclone.",
+        "Do not stand near windows during strong wind.",
+        "Do not use elevators if power is unstable.",
+        "Do not ignore school or local warning messages.",
+        "Do not leave younger siblings alone."
+      ],
+      "kit": [
+        "Torch",
+        "Power bank",
+        "Water bottle",
+        "Snacks",
+        "Important documents"
+      ]
+    },
+    "Elderly": {
+      "reason": "Medical needs, stability, and caregiver support are the main risks.",
+      "do": [
+        "Keep medicines and prescriptions in one safe place.",
+        "Stay in the safest inner room of the house.",
+        "Ask a family member to stay nearby.",
+        "Keep a working phone with emergency numbers.",
+        "Prepare soft food and drinking water in advance."
+      ],
+      "dont": [
+        "Do not go out during the cyclone.",
+        "Do not stand near windows or weak walls.",
+        "Do not use candles if a battery torch is available.",
+        "Do not move around alone in the dark.",
+        "Do not delay reaching a safer shelter if advised."
+      ],
+      "kit": [
+        "Daily medicines",
+        "Torch",
+        "Water bottle",
+        "Soft food",
+        "Emergency contact list"
+      ]
+    },
+    "Worker": {
+      "reason": "Travel disruption, workplace shutdown, and injury risk are the main concerns.",
+      "do": [
+        "Leave work early if warnings increase.",
+        "Secure tools, vehicles, and materials.",
+        "Inform your supervisor about your location.",
+        "Stay away from construction sites and open areas.",
+        "Keep a backup route and shelter option ready."
+      ],
+      "dont": [
+        "Do not travel in strong wind or heavy rain.",
+        "Do not work near scaffolding, poles, or glass.",
+        "Do not touch fallen wires.",
+        "Do not use unsafe transport during the storm.",
+        "Do not ignore evacuation instructions."
+      ],
+      "kit": [
+        "Torch",
+        "Power bank",
+        "Raincoat",
+        "Whistle",
+        "First aid kit"
+      ]
+    },
+    "Industry": {
+      "reason": "Structural safety, staff evacuation, and equipment shutdown are the key priorities.",
+      "do": [
+        "Pause operations before the cyclone peaks.",
+        "Secure roofs, doors, and external objects.",
+        "Move critical inventory to safer indoor areas.",
+        "Shut down vulnerable machinery safely.",
+        "Ensure staff evacuation and attendance tracking."
+      ],
+      "dont": [
+        "Do not keep production running in unsafe conditions.",
+        "Do not leave heavy materials unsecured outdoors.",
+        "Do not allow staff to remain near glass zones.",
+        "Do not use lifts during power instability.",
+        "Do not restart operations before inspection."
+      ],
+      "kit": [
+        "Emergency plan",
+        "Two-way radio",
+        "Backup power",
+        "First aid kits",
+        "Emergency lighting"
+      ]
+    }
+  },
+  "HEATWAVE": {
+    "Farmer": {
+      "reason": "Field work, livestock hydration, and crop stress are the main risks.",
+      "do": [
+        "Work in the early morning or evening only.",
+        "Provide drinking water to animals regularly.",
+        "Use shade for rest breaks in the field.",
+        "Wear light cotton clothes and a cap.",
+        "Use ORS if you feel weak or dizzy."
+      ],
+      "dont": [
+        "Do not work under direct sun at noon.",
+        "Do not ignore heat exhaustion symptoms.",
+        "Do not leave livestock without shade and water.",
+        "Do not wear dark or heavy clothing.",
+        "Do not skip hydration during farm work."
+      ],
+      "kit": [
+        "Water bottles",
+        "ORS packets",
+        "Cap",
+        "Cooling towel",
+        "First aid kit"
+      ]
+    },
+    "Student": {
+      "reason": "School timing, hydration, and outdoor activity limits are the main concerns.",
+      "do": [
+        "Carry a water bottle and drink often.",
+        "Avoid outdoor games during peak heat hours.",
+        "Stay in shaded or cool areas during breaks.",
+        "Wear a cap and light cotton clothing.",
+        "Tell a teacher or parent if you feel unwell."
+      ],
+      "dont": [
+        "Do not play outside in strong afternoon heat.",
+        "Do not ignore dizziness, headache, or nausea.",
+        "Do not wear tight or dark clothes.",
+        "Do not skip meals or water.",
+        "Do not remain in a closed hot classroom without ventilation."
+      ],
+      "kit": [
+        "Water bottle",
+        "Cap",
+        "Sunscreen",
+        "Snacks",
+        "Power bank"
+      ]
+    },
+    "Elderly": {
+      "reason": "Dehydration, weak heat tolerance, and medication sensitivity are the main risks.",
+      "do": [
+        "Stay indoors in the coolest room available.",
+        "Drink small amounts of water often.",
+        "Keep medicines away from heat and sunlight.",
+        "Use a fan, wet cloth, or cooling towel.",
+        "Ask family members to check on you regularly."
+      ],
+      "dont": [
+        "Do not go outside during peak heat hours.",
+        "Do not sit in rooms without ventilation.",
+        "Do not skip water even if you do not feel thirsty.",
+        "Do not overexert yourself physically.",
+        "Do not ignore confusion, weakness, or dizziness."
+      ],
+      "kit": [
+        "Water bottle",
+        "Cooling towel",
+        "Medicines",
+        "ORS packets",
+        "Thermometer"
+      ]
+    },
+    "Worker": {
+      "reason": "Physical labor, dehydration, and heat stress are the main concerns.",
+      "do": [
+        "Take regular breaks in shade or cool areas.",
+        "Drink water before, during, and after work.",
+        "Wear breathable clothes and head protection.",
+        "Reduce heavy work during peak afternoon heat.",
+        "Report heat stress symptoms immediately."
+      ],
+      "dont": [
+        "Do not work long hours under the direct sun.",
+        "Do not wait until you feel thirsty to drink water.",
+        "Do not ignore cramps, dizziness, or sweating changes.",
+        "Do not wear thick protective clothing unless necessary.",
+        "Do not continue working if you feel faint."
+      ],
+      "kit": [
+        "Water bottle",
+        "ORS packets",
+        "Cap or helmet liner",
+        "Cooling towel",
+        "First aid kit"
+      ]
+    },
+    "Industry": {
+      "reason": "Worker safety, ventilation, and heat-related productivity loss are the main risks.",
+      "do": [
+        "Adjust shifts to avoid peak heat hours.",
+        "Provide cool drinking water in work areas.",
+        "Improve ventilation and airflow indoors.",
+        "Allow extra rest breaks for workers.",
+        "Train staff to recognize heat illness early."
+      ],
+      "dont": [
+        "Do not schedule heavy outdoor work at midday.",
+        "Do not ignore unsafe indoor temperatures.",
+        "Do not block airflow in enclosed spaces.",
+        "Do not skip worker hydration checks.",
+        "Do not treat heat symptoms as minor issues."
+      ],
+      "kit": [
+        "Water dispensers",
+        "ORS packets",
+        "Cooling fans",
+        "First aid kits",
+        "Heat warning posters"
+      ]
+    }
+  }
+}
