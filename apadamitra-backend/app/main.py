@@ -139,7 +139,7 @@ async def startup_event():
     Perform initialization tasks here.
     """
     logger.info("=" * 60)
-    logger.info("ApadaMitra AI / EarthKavach AI Backend Starting...")
+    logger.info("ApadaMitra AI Backend Starting...")
     logger.info("=" * 60)
     logger.info(f"Environment: {os.getenv('ENVIRONMENT', 'development')}")
     logger.info(f"Alert Threshold: {os.getenv('ALERT_THRESHOLD', '70')}%")
@@ -173,7 +173,7 @@ async def shutdown_event():
     Perform cleanup tasks here.
     """
     logger.info("=" * 60)
-    logger.info("ApadaMitra AI / EarthKavach AI Backend Shutting Down...")
+    logger.info("ApadaMitra AI  Backend Shutting Down...")
     await background_alert_service.stop()
     logger.info("=" * 60)
 

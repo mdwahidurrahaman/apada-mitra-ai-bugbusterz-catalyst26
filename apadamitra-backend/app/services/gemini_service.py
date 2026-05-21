@@ -33,7 +33,7 @@ class GeminiService:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "gemma-4-31b-it",
+        model_name: str = "gemini-2.5-flash",
         timeout: int = 10,
         max_retries: int = 4
     ):
