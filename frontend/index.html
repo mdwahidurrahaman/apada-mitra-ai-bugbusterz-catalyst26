@@ -1,15 +1,99 @@
-<!DOCTYPE html> 
-<html lang="en"> 
-<head> 
-  <meta charset="UTF-8" /> 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
-  <title>APADAMITRA — AI Disaster Intelligence Platform</title> 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" /> 
-  <link 
-href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital
-,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet" /> 
-  <link rel="stylesheet" href="style.css" /> 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font
-awesome/6.7.2/css/all.min.css"> 
-</head> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APADAMITRA — AI Disaster Intelligence Platform</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
 <body>
+
+  <!-- ═══════════ LOADING SCREEN ═══════════ -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="ls-inner">
+      <div class="ls-shield">
+        <svg viewBox="0 0 80 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M40 5L8 20V42C8 60 22 76 40 82C58 76 72 60 72 42V20L40 5Z"
+            fill="rgba(0,200,255,0.08)" stroke="rgba(0,200,255,0.5)" stroke-width="1.5"/>
+          <path d="M40 20L50 38H30L40 20Z" fill="rgba(0,200,255,0.8)"/>
+          <path d="M30 38L40 58L50 38" stroke="rgba(0,200,255,1)" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="ls-logo">APADAMITRA</div>
+      <div class="ls-sub">Initializing AI Systems...</div>
+      <div class="ls-progress-wrap"><div class="ls-progress-bar"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header id="siteHeader">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 60 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M30 3L5 15V32C5 48 16 62 30 67C44 62 55 48 55 32V15L30 3Z"
+              fill="rgba(0,200,255,0.06)" stroke="rgba(0,200,255,0.5)" stroke-width="1.2"/>
+            <path d="M30 15L38 29H22L30 15Z" fill="#00c8ff"/>
+            <path d="M22 29L30 44L38 29" stroke="#00c8ff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="logo-name">APADAMITRA</h1>
+          <p class="logo-tagline">Not Just Alerts — Personalized Survival Guidance Powered by AI</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div class="selectors-row">
+          <div class="sel-wrap">
+            <select id="langSelect" onchange="setLanguage(this.value)">
+              <option value="en">🌐English</option>
+              <option value="hi">हिन्दी</option>
+              <option value="bn">বাংলা</option>
+            </select>
+          </div>
+          <div class="sel-wrap">
+            <select id="userTypeSelect" onchange="setUserType(this.value)">
+              <option value="farmer">🌾 Farmer</option>
+              <option value="student">📚 Student</option>
+              <option value="elderly">👴 Elderly</option>
+              <option value="worker">👷 Worker</option>
+              <option value="industry">🏭 Industry</option>
+              <option value="general">👤 General</option>
+            </select>
+          </div>
+        </div>
+        <nav class="desktop-nav" id="desktopNav">
+          <button class="nav-btn" onclick="scrollToSection('weatherSection')">
+            <span class="nb-icon">🌤</span>
+            <span data-i18n="nav_weather">Weather</span>
+          </button>
+          <button class="nav-btn" onclick="scrollToSection('mitigationSection')">
+            <span class="nb-icon">🛡</span>
+            <span data-i18n="nav_mitigation">Mitigation</span>
+          </button>
+          <button class="nav-btn highlight-btn" onclick="openVoiceModal()">
+            <span class="nb-icon">🎙</span>
+            <span data-i18n="nav_voice">AI Assistant</span>
+          </button>
+          <button class="nav-btn" onclick="scrollToSection('mapSection')">
+            <span class="nb-icon">🗺</span>
+            <span data-i18n="nav_map">Safety Map</span>
+          </button>
+        </nav>
+        <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-nav" id="mobileNav">
+      <button onclick="scrollToSection('weatherSection'); toggleMobileNav()">🌤 <span data-i18n="nav_weather">Weather</span></button>
+      <button onclick="scrollToSection('mitigationSection'); toggleMobileNav()">🛡 <span data-i18n="nav_mitigation">Mitigation</span></button>
+      <button onclick="openVoiceModal(); toggleMobileNav()">🎙 <span data-i18n="nav_voice">AI Assistant</span></button>
+      <button onclick="scrollToSection('mapSection'); toggleMobileNav()">🗺 <span data-i18n="nav_map">Safety Map</span></button>
+    </div>
+  </header>
+
