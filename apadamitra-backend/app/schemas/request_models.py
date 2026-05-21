@@ -30,132 +30,6 @@ class DisasterTypeEnum(str, Enum):
 
 
 # ============================================================================
-# AUTH REQUESTS
-# ============================================================================
-
-class RegisterRequest(BaseModel):
-    """
-    Request model for user registration
-
-    Fields:
-        name: User's full name
-        email: Unique email address
-        password: Password with at least 8 characters
-        phone: Optional phone number for alerts
-        user_type: Optional user type for personalized advice
-        location: Optional location name
-        lat/lon: Optional saved coordinates
-        enable_sms_alerts: Whether SMS alerts should be enabled
-    """
-    name: str = Field(
-        ...,
-        min_length=2,
-        max_length=100,
-        description="User's full name",
-        example="Debjyoti Saha"
-    )
-    email: str = Field(
-        ...,
-        min_length=5,
-        max_length=120,
-        description="Unique email address",
-        example="debjyoti@example.com"
-    )
-    password: str = Field(
-        ...,
-        min_length=8,
-        max_length=128,
-        description="Password with at least 8 characters",
-        example="StrongPass123"
-    )
-    phone: Optional[str] = Field(
-        None,
-        min_length=8,
-        max_length=20,
-        pattern=r"^\+[1-9]\d{7,14}$",
-        description="Phone number in E.164 format",
-        example="+919876543210"
-    )
-    user_type: Optional[UserTypeEnum] = Field(
-        None,
-        description="Type of user for personalized advice",
-        example="farmer"
-    )
-    location: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="User location name",
-        example="Malda"
-    )
-    lat: Optional[float] = Field(
-        None,
-        ge=-90,
-        le=90,
-        description="Saved latitude",
-        example=25.61
-    )
-    lon: Optional[float] = Field(
-        None,
-        ge=-180,
-        le=180,
-        description="Saved longitude",
-        example=88.12
-    )
-    enable_sms_alerts: bool = Field(
-        False,
-        description="Whether the user wants SMS alerts",
-        example=True
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "name": "Debjyoti Saha",
-                "email": "debjyoti@example.com",
-                "password": "StrongPass123",
-                "phone": "+919876543210",
-                "user_type": "farmer",
-                "location": "Malda",
-                "lat": 25.61,
-                "lon": 88.12,
-                "enable_sms_alerts": True
-            }
-        }
-
-
-class LoginRequest(BaseModel):
-    """
-    Request model for user login
-
-    Fields:
-        email: Registered email address
-        password: Account password
-    """
-    email: str = Field(
-        ...,
-        min_length=5,
-        max_length=120,
-        description="Registered email address",
-        example="debjyoti@example.com"
-    )
-    password: str = Field(
-        ...,
-        min_length=1,
-        max_length=128,
-        description="Account password",
-        example="StrongPass123"
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "email": "debjyoti@example.com",
-                "password": "StrongPass123"
-            }
-        }
-
-
-# ============================================================================
 # PREDICTION REQUEST
 # ============================================================================
 
@@ -187,27 +61,24 @@ class PredictionRequest(BaseModel):
         le=180,
         example=88.12
     )
-    send_sms_alert: bool = Field(
-        False,
-        description="Send an SMS alert if the prediction crosses the alert threshold",
-        example=False
-    )
-    alert_phone_number: Optional[str] = Field(
+    phone_number: Optional[str] = Field(
         None,
         min_length=8,
         max_length=20,
         pattern=r"^\+[1-9]\d{7,14}$",
-        description="Recipient phone number in E.164 format for SMS alerts",
-        example="+919876543210"
+        description=(
+            "Recipient phone in E.164 format. When provided, the backend "
+            "automatically sends an SMS if any disaster probability is a high alert."
+        ),
+        example="+919876543210",
     )
-    
+
     class Config:
         json_schema_extra = {
             "example": {
                 "lat": 25.61,
                 "lon": 88.12,
-                "send_sms_alert": False,
-                "alert_phone_number": "+919876543210"
+                "phone_number": "+919876543210",
             }
         }
 

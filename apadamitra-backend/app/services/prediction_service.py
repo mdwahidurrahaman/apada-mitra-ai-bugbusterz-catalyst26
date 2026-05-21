@@ -108,46 +108,43 @@ class PredictionService:
             )
 
             probabilities = {
-
                 "Flood": flood_prob,
                 "Cyclone": cyclone_prob,
-                "Heatwave": heatwave_prob
-
+                "Heatwave": heatwave_prob,
             }
 
             predicted_disaster = max(
                 probabilities,
-                key=probabilities.get
+                key=probabilities.get,
             )
 
-            confidence = probabilities[
-                predicted_disaster
+            confidence = probabilities[predicted_disaster]
+
+            high_alerts = [
+                {
+                    "disaster": name,
+                    "probability": int(round(prob)),
+                }
+                for name, prob in probabilities.items()
+                if prob >= self.threshold
             ]
 
-            alert = confidence > self.threshold
+            alert = len(high_alerts) > 0
 
             return {
-
-                "flood_probability": int(flood_prob),
-                "cyclone_probability": int(cyclone_prob),
-                "heatwave_probability": int(heatwave_prob),
-
-                "predicted_disaster":
-                    predicted_disaster,
-
-                "confidence":
-                    int(confidence),
-
-                "alert":
-                    alert,
-
+                "flood_probability": int(round(flood_prob)),
+                "cyclone_probability": int(round(cyclone_prob)),
+                "heatwave_probability": int(round(heatwave_prob)),
+                "predicted_disaster": predicted_disaster,
+                "confidence": int(round(confidence)),
+                "alert": alert,
+                "high_alerts": high_alerts,
+                "alert_threshold": self.threshold,
                 "location": {
                     "lat": lat,
-                    "lon": lon
+                    "lon": lon,
                 },
-
-                "weather_data":
-                    weather_data
+                "weather_data": weather_data,
             }
 
         except Exception as e:
@@ -323,7 +320,9 @@ class PredictionService:
 
             "confidence":0,
 
-            "alert":False,
+            "alert": False,
+            "high_alerts": [],
+            "alert_threshold": self.threshold,
 
             "location":{
                 "lat":0,

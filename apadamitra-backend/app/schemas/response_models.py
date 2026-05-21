@@ -34,98 +34,6 @@ class HealthCheckResponse(BaseModel):
 
 
 # ============================================================================
-# AUTH RESPONSE
-# ============================================================================
-
-class UserResponse(BaseModel):
-    """
-    Public user profile returned after registration or login.
-    """
-    id: str = Field(..., description="MongoDB user id")
-    name: str = Field(..., description="User's full name")
-    email: str = Field(..., description="User email address")
-    phone: Optional[str] = Field(None, description="User phone number")
-    user_type: Optional[str] = Field(None, description="User type")
-    location: Optional[str] = Field(None, description="User location")
-    lat: Optional[float] = Field(None, description="Saved latitude")
-    lon: Optional[float] = Field(None, description="Saved longitude")
-    enable_sms_alerts: bool = Field(
-        False,
-        description="Whether SMS alerts are enabled"
-    )
-    role: str = Field(
-        "user",
-        description="User role"
-    )
-    created_at: Optional[str] = Field(None, description="Account creation time")
-
-
-class AuthResponse(BaseModel):
-    """
-    Response for registration and login endpoints.
-    """
-    success: bool = Field(..., description="Whether the action succeeded")
-    message: str = Field(..., description="Human-readable result message")
-    user: UserResponse = Field(..., description="Public user profile")
-    access_token: Optional[str] = Field(
-        None,
-        description="Bearer access token for authenticated requests"
-    )
-    token_type: str = Field(
-        "bearer",
-        description="Token type"
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "success": True,
-                "message": "Registration successful.",
-                "user": {
-                    "id": "6650f0000000000000000000",
-                    "name": "Debjyoti Saha",
-                    "email": "debjyoti@example.com",
-                    "phone": "+919876543210",
-                    "user_type": "farmer",
-                    "location": "Malda",
-                    "lat": 25.61,
-                    "lon": 88.12,
-                    "enable_sms_alerts": True,
-                    "role": "user",
-                    "created_at": "2026-05-19T14:30:00"
-                },
-                "access_token": "jwt-token",
-                "token_type": "bearer"
-            }
-        }
-
-
-class UsersListResponse(BaseModel):
-    """
-    Response for listing registered users.
-    """
-    users: List[UserResponse] = Field(
-        ...,
-        description="Registered users"
-    )
-    total: int = Field(
-        ...,
-        ge=0,
-        description="Total number of registered users"
-    )
-    limit: int = Field(
-        ...,
-        ge=1,
-        description="Maximum users returned"
-    )
-    skip: int = Field(
-        ...,
-        ge=0,
-        description="Number of users skipped"
-    )
-
-
-# ============================================================================
 # PREDICTION RESPONSE
 # ============================================================================
 
@@ -190,8 +98,20 @@ class PredictionResponse(BaseModel):
     )
     alert: bool = Field(
         ...,
-        description="Whether alert should be triggered",
+        description="Whether any disaster crossed the high-alert threshold",
         example=True
+    )
+    high_alerts: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Disasters at or above the alert threshold",
+        example=[{"disaster": "Flood", "probability": 81}],
+    )
+    alert_threshold: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Probability threshold used for high alerts",
+        example=70,
     )
     location: Dict[str, float] = Field(
         ...,
