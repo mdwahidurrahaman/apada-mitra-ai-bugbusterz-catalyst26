@@ -73,6 +73,3 @@ desktop.ini
 # Database (local dev)
 *.db
 *.sqlite3
-
-# Optional: uncomment if ML model files are large or downloaded at build time
-# weather-alert-backend/ml_models/*.pkl
