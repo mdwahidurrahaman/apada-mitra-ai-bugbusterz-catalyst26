@@ -1,164 +1,143 @@
 """
 Voice Routes
-API endpoints for voice/chat assistant
-
-This module contains FastAPI route handlers for voice assistant interactions.
-Provides POST /api/voice-chat endpoint for natural language disaster queries.
+API endpoints for voice/chat assistant — including real-time WebSocket.
 """
 
-from fastapi import APIRouter, HTTPException, status
+import json
+import logging
+from typing import Dict, Any
+
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, status
 from starlette.concurrency import run_in_threadpool
-from typing import Dict, Any, Optional
 
 from app.schemas.request_models import VoiceChatRequest
 from app.schemas.response_models import VoiceChatResponse
 from app.services.voice_service import VoiceService
-from app.services.prediction_service import PredictionService
 
-# Create router
-router = APIRouter(
-    prefix="/api",
-    tags=["Voice Assistant"]
-)
+logger = logging.getLogger(__name__)
 
+router = APIRouter(prefix="/api", tags=["Voice Assistant"])
+
+
+# ── REST endpoint ───────────────────────────────────────────────────────────
 
 @router.post(
     "/voice-chat",
     response_model=VoiceChatResponse,
-    summary="Voice/chat assistant",
+    summary="Voice/chat assistant (REST)",
     description="Process natural language questions about disasters and get intelligent responses",
-    response_description="AI-generated answer with detected intent"
 )
 async def voice_chat(request: VoiceChatRequest) -> Dict[str, Any]:
-    """
-    POST /api/voice-chat
-    
-    Process natural language questions about disasters and get intelligent responses.
-    
-    The endpoint:
-    1. Receives user's question, user type, and location
-    2. Detects intent from question (prediction, mitigation, safety, weather, emergency)
-    3. Adds context (user type, location, current prediction if available)
-    4. Tries to get response from Gemini AI
-    5. Falls back to hardcoded responses if AI fails (never crashes)
-    6. Returns intelligent answer with detected intent
-    
-    Possible Intents:
-        - prediction: Questions about disaster risk/prediction
-        - mitigation: Questions about what to do/preparation
-        - safety: Questions about safety/evacuation
-        - weather: Questions about weather
-        - emergency: Questions about emergency contacts/help
-        - general: Other questions
-        
-    Args:
-        request: VoiceChatRequest containing question, user_type (optional), location (optional)
-        
-    Returns:
-        VoiceChatResponse with:
-        - answer: str (intelligent response to question)
-        - intent: str (detected intent from question)
-        
-    Example Request:
-        POST /api/voice-chat
-        {
-            "question": "Will flood happen near me?",
-            "user_type": "farmer",
-            "location": "Malda"
-        }
-    
-    Example Response:
-        {
-            "answer": "Heavy flood possibility nearby. Move livestock to safer locations. Current flood probability is 81%.",
-            "intent": "prediction"
-        }
-        
-    Example Request 2:
-        POST /api/voice-chat
-        {
-            "question": "What should I do during a heatwave?",
-            "user_type": "elderly"
-        }
-    
-    Example Response 2:
-        {
-            "answer": "Stay indoors during peak heat (11 AM - 4 PM). Drink water frequently even if not thirsty. Take cool baths. Wear light cotton clothes. If you feel dizzy or weak, call 108 for ambulance.",
-            "intent": "mitigation"
-        }
-    """
     try:
-        # Create voice service instance
         voice = VoiceService()
-        
-        # Get current prediction data if location is provided
-        prediction_data = None
-        if request.location and request.user_type:
-            try:
-                # Try to get prediction for the location
-                # Note: This requires location coordinates, not just name
-                # For now, skip prediction data unless coordinates are provided
-                pass
-            except:
-                pass  # Skip prediction data if unavailable
-        
-        # Get response
         response = await run_in_threadpool(
             voice.chat,
             question=request.question,
             user_type=request.user_type.value if request.user_type else None,
             location=request.location,
-            prediction_data=prediction_data
+            prediction_data=None,
         )
-        
         if response is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to generate response. Please try again."
+                detail="Failed to generate response. Please try again.",
             )
-
         return VoiceChatResponse(**response).model_dump()
-        
+
     except HTTPException:
-        # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
-        # Log unexpected errors
-        import logging
-        logger = logging.getLogger(__name__)
         logger.error(f"Voice chat error: {str(e)}", exc_info=True)
-        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate voice response. Please try again."
+            detail="Failed to generate voice response. Please try again.",
         )
 
 
-@router.get(
-    "/voice-chat/health",
-    summary="Check voice service health",
-    description="Check if voice assistant service and AI are available"
-)
+# ── WebSocket endpoint ──────────────────────────────────────────────────────
+
+@router.websocket("/ws/voice-chat")
+async def voice_chat_ws(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time streaming voice assistant.
+
+    Protocol (JSON messages):
+      Client → Server:  { "question": "...", "user_type": "farmer", "location": "Malda" }
+      Server → Client:  { "type": "chunk",  "text": "..." }   (one or more)
+                        { "type": "done",   "intent": "..." }
+                        { "type": "error",  "text": "..." }
+
+    NOTE: chat_stream now collects all Gemini chunks internally, parses
+    the JSON response, and yields only the clean answer — so the client
+    typically receives a single "chunk" message with the full answer,
+    followed by "done". This guarantees no metadata or reasoning leaks
+    to the frontend regardless of what Gemini returns.
+    """
+    await websocket.accept()
+    voice = VoiceService()
+
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                await websocket.send_json({"type": "error", "text": "Invalid JSON"})
+                continue
+
+            question = (data.get("question") or "").strip()
+            if not question:
+                await websocket.send_json({"type": "error", "text": "Empty question"})
+                continue
+
+            user_type = data.get("user_type") or None
+            location  = data.get("location") or None
+
+            intent = voice._detect_intent(question)
+
+            full_text = ""
+            try:
+                for chunk in voice.chat_stream(
+                    question=question,
+                    user_type=user_type,
+                    location=location,
+                ):
+                    if chunk:
+                        full_text += chunk
+                        await websocket.send_json({"type": "chunk", "text": chunk})
+
+            except Exception as e:
+                logger.error(f"WS stream error: {e}", exc_info=True)
+                await websocket.send_json({
+                    "type": "error",
+                    "text": "Stream error. For emergencies call 112.",
+                })
+                continue
+
+            await websocket.send_json({"type": "done", "intent": intent})
+
+    except WebSocketDisconnect:
+        logger.info("WebSocket client disconnected")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}", exc_info=True)
+
+
+# ── Health check ────────────────────────────────────────────────────────────
+
+@router.get("/voice-chat/health", summary="Check voice service health")
 async def voice_health_check() -> Dict[str, Any]:
-    """
-    GET /api/voice-chat/health
-    
-    Health check endpoint for voice assistant service.
-    Verifies that Gemini AI is configured and service is operational.
-    
-    Returns:
-        Dictionary with service status
-    """
     try:
         voice = VoiceService()
         ai_available = voice.gemini_service.is_available()
-        
         return {
             "status": "healthy",
             "ai_available": ai_available,
-            "message": "Voice assistant is ready" if ai_available else "Voice assistant using fallback mode (AI not available)"
+            "websocket_endpoint": "/api/ws/voice-chat",
+            "message": (
+                "Voice assistant is ready"
+                if ai_available
+                else "Voice assistant using fallback mode (AI not available)"
+            ),
         }
     except Exception as e:
-        return {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        return {"status": "unhealthy", "error": str(e)}
