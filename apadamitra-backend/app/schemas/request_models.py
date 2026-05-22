@@ -207,7 +207,7 @@ class SmsAlertRequest(BaseModel):
         min_length=1,
         max_length=500,
         description="Alert message to send",
-        example="High flood risk detected. Move to higher ground and follow local authority instructions."
+        example="High flood risk detected. visit https://apadamitra.com for more information."
     )
     disaster: Optional[DisasterTypeEnum] = Field(
         None,
@@ -232,7 +232,7 @@ class SmsAlertRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "to_number": "+919876543210",
-                "message": "High flood risk detected. Move to higher ground and follow local authority instructions.",
+                "message": "High flood risk detected. visit https://apadamitra.com for more information.",
                 "disaster": "flood",
                 "probability": 84,
                 "location": "Malda"
